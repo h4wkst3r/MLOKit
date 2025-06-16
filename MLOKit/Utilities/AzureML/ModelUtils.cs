@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Amazon.Runtime;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -467,9 +468,9 @@ namespace MLOKit.Utilities.AzureML
 
 
         // Download a file
-        public static async Task<string> downloadFile(string credentials, string contentURI)
+        public static async Task<byte[]> downloadFile(string credentials, string contentURI)
         {
-            string base64StringOutput = "";
+            byte[] fileContent = null;
 
             try
             {
@@ -492,11 +493,10 @@ namespace MLOKit.Utilities.AzureML
 
                     // get web response 
                     HttpWebResponse myWebResponse = (HttpWebResponse)await webRequest.GetResponseAsync();
-                    string content;
-                    var reader = new StreamReader(myWebResponse.GetResponseStream());
-                    content = reader.ReadToEnd();
+                    MemoryStream ms = new MemoryStream();
+                    myWebResponse.GetResponseStream().CopyTo(ms);
+                    fileContent = ms.ToArray();
 
-                    base64StringOutput = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(content));
 
                 }
             }
@@ -508,7 +508,7 @@ namespace MLOKit.Utilities.AzureML
             }
 
 
-            return base64StringOutput;
+            return fileContent;
 
         }
 

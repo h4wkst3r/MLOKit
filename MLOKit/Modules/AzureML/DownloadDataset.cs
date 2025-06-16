@@ -84,23 +84,23 @@ namespace MLOKit.Modules.AzureML
                     Console.WriteLine(dataset.datastoreName);
                     Console.WriteLine("");
 
-                    // get the account key for a given datastore - https://eastus.experiments.azureml.net/datastore/v1.0/subscriptions/70e2bdea-b245-4250-8a55-cb66ea0d6dd3/resourceGroups/test/providers/Microsoft.MachineLearningServices/workspaces/Test-Workspace/datastores/workspaceblobstore
+                    // get the account key for a given datastore
                     Objects.AzureML.Datastore datastore = await Utilities.AzureML.DatastoreUtils.getSingleDatastore(credential, subscriptionID, region, resourceGroup, workspace, dataset.datastoreName);
 
 
                     // form the authorization header based on the account name and key - https://github.com/Azure-Samples/storage-dotnet-rest-api-with-auth/blob/master/StorageRestApiAuth/AzureStorageAuthenticationHelper.cs#L33
                     // enumerate storage blob container - https://github.com/Azure-Samples/storage-dotnet-rest-api-with-auth/blob/master/StorageRestApiAuth/Program.cs
                     // get our target file
-                    string datasetContent = await Utilities.AzureML.StorageBlobUtils.downloadFileFromStorageBlob(datastore.accountName, datastore.datastoreCredential, storageContainer, relativePath, CancellationToken.None);
+                    byte [] datasetContent = await Utilities.AzureML.StorageBlobUtils.downloadFileFromStorageBlob(datastore.accountName, datastore.datastoreCredential, storageContainer, relativePath, CancellationToken.None);
 
                     // if we got dataset back, then proceed
-                    if (datasetContent != "")
+                    if (datasetContent != null)
                     {
                         string fileOut = Utilities.FileUtils.generateRandomName();
                         fileOut = "MLOKit-" + fileOut;
 
                         // write dataset file to disk
-                        File.WriteAllBytes(fileOut, Convert.FromBase64String(datasetContent));
+                        File.WriteAllBytes(fileOut, datasetContent);
 
 
                         Console.WriteLine("");

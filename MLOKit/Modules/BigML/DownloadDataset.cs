@@ -51,10 +51,10 @@ namespace MLOKit.Modules.BigML
                     Console.WriteLine("");
 
                     // download the dataset and store in base64
-                    string datasetContent = await Utilities.BigML.DatasetUtils.downloadDataset(credential, datasetID);
+                    byte [] datasetContent = await Utilities.BigML.DatasetUtils.downloadDataset(credential, datasetID);
 
                     // if we got dataset back, then proceed
-                    if (datasetContent != "")
+                    if (datasetContent != null)
                     {
 
                         // create random file name
@@ -70,7 +70,7 @@ namespace MLOKit.Modules.BigML
                         fileName = "MLOKit-" + fileName;
 
                         // write dataset file to disk
-                        File.WriteAllBytes(fileName, Convert.FromBase64String(datasetContent));
+                        File.WriteAllBytes(fileName, datasetContent);
 
 
                         Console.WriteLine("[+] SUCCESS: Dataset written to: " + Environment.CurrentDirectory + "\\" + fileName);

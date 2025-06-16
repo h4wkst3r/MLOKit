@@ -11,11 +11,12 @@ namespace MLOKit.Objects.AzureML
         public string datastoreCredential { get; set; }
         public string subscriptionId { get; set; }
         public string datstoreName { get; set; }
+        public string datStoreType { get; set; }
 
 
 
 
-        public Datastore(string accountName, string containerName, string endpoint, string datastoreCredential, string subscriptionId, string datstoreName)
+        public Datastore(string accountName, string containerName, string endpoint, string datastoreCredential, string subscriptionId, string datstoreName, string datStoreType)
         {
             this.accountName = accountName;
             this.containerName = containerName;
@@ -23,6 +24,7 @@ namespace MLOKit.Objects.AzureML
             this.datastoreCredential = datastoreCredential;
             this.subscriptionId = subscriptionId;
             this.datstoreName = datstoreName;
+            this.datStoreType = datStoreType;
 
 
 

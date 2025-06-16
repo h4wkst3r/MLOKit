@@ -98,13 +98,13 @@ namespace MLOKit.Modules.AzureML
                                 Console.WriteLine("");
                                 Console.WriteLine(contentURI);
                                 Console.WriteLine("");
-                                string fileContent = await Utilities.AzureML.ModelUtils.downloadFile(credential, contentURI);
+                                byte [] fileContent = await Utilities.AzureML.ModelUtils.downloadFile(credential, contentURI);
 
                                 // if we got file back, then proceed to write it
-                                if (fileContent != "")
+                                if (fileContent != null)
                                 {
 
-                                    File.WriteAllBytes(outputDir.FullName + "\\" + fileName, Convert.FromBase64String(fileContent));
+                                    File.WriteAllBytes(outputDir.FullName + "\\" + fileName, fileContent);
                                     Console.WriteLine("");
                                     Console.WriteLine("[+] SUCCESS: " + fileName + " written to: " + outputDir.FullName);
                                     Console.WriteLine("");

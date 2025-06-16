@@ -9,12 +9,13 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>MLOKit</RootNamespace>
     <AssemblyName>MLOKit</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -36,6 +37,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="AWSSDK.Core, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
+      <HintPath>..\packages\AWSSDK.Core.3.7.401.4\lib\net45\AWSSDK.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="AWSSDK.S3, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
+      <HintPath>..\packages\AWSSDK.S3.3.7.412.4\lib\net45\AWSSDK.S3.dll</HintPath>
+    </Reference>
+    <Reference Include="AWSSDK.SageMaker, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
+      <HintPath>..\packages\AWSSDK.SageMaker.3.7.421.3\lib\net45\AWSSDK.SageMaker.dll</HintPath>
+    </Reference>
     <Reference Include="Costura, Version=3.3.3.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
       <HintPath>..\packages\Costura.Fody.3.3.3\lib\net40\Costura.dll</HintPath>
     </Reference>
@@ -59,12 +69,22 @@
     <Compile Include="Modules\AzureML\ListDatasets.cs" />
     <Compile Include="Modules\AzureML\ListModels.cs" />
     <Compile Include="Modules\AzureML\ListProjects.cs" />
+    <Compile Include="Modules\AzureML\PoisonModel.cs" />
     <Compile Include="Modules\BigML\Check.cs" />
     <Compile Include="Modules\BigML\DownloadDataset.cs" />
     <Compile Include="Modules\BigML\DownloadModel.cs" />
     <Compile Include="Modules\BigML\ListDatasets.cs" />
     <Compile Include="Modules\BigML\ListModels.cs" />
     <Compile Include="Modules\BigML\ListProjects.cs" />
+    <Compile Include="Modules\MLFlow\Check.cs" />
+    <Compile Include="Modules\MLFlow\DownloadModel.cs" />
+    <Compile Include="Modules\MLFlow\ListModels.cs" />
+    <Compile Include="Modules\SageMaker\AddNotebookTrigger.cs" />
+    <Compile Include="Modules\SageMaker\Check.cs" />
+    <Compile Include="Modules\SageMaker\DownloadModel.cs" />
+    <Compile Include="Modules\SageMaker\ListModels.cs" />
+    <Compile Include="Modules\SageMaker\ListNotebooks.cs" />
+    <Compile Include="Modules\SageMaker\PoisonModel.cs" />
     <Compile Include="Modules\VertexAI\Check.cs" />
     <Compile Include="Modules\VertexAI\DownloadDataset.cs" />
     <Compile Include="Modules\VertexAI\DownloadModel.cs" />
@@ -80,6 +100,10 @@
     <Compile Include="Objects\BigML\Dataset.cs" />
     <Compile Include="Objects\BigML\Model.cs" />
     <Compile Include="Objects\BigML\Project.cs" />
+    <Compile Include="Objects\MLFlow\Artifact.cs" />
+    <Compile Include="Objects\MLFlow\Experiment.cs" />
+    <Compile Include="Objects\MLFlow\Model.cs" />
+    <Compile Include="Objects\MLFlow\Run.cs" />
     <Compile Include="Objects\VertexAI\Dataset.cs" />
     <Compile Include="Objects\VertexAI\Model.cs" />
     <Compile Include="Objects\VertexAI\Project.cs" />
@@ -97,6 +121,11 @@
     <Compile Include="Utilities\BigML\ProjectUtils.cs" />
     <Compile Include="Utilities\BigML\WebUtils.cs" />
     <Compile Include="Utilities\FileUtils.cs" />
+    <Compile Include="Utilities\MLFlow\ExperimentUtils.cs" />
+    <Compile Include="Utilities\MLFlow\ModelUtils.cs" />
+    <Compile Include="Utilities\MLFlow\RunUtils.cs" />
+    <Compile Include="Utilities\MLFlow\WebUtils.cs" />
+    <Compile Include="Utilities\SageMaker\RegionUtils.cs" />
     <Compile Include="Utilities\VertexAI\BucketUtils.cs" />
     <Compile Include="Utilities\VertexAI\DatasetUtils.cs" />
     <Compile Include="Utilities\VertexAI\ModelUtils.cs" />
@@ -106,6 +135,11 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\AWSSDK.S3.3.7.412.4\analyzers\dotnet\cs\AWSSDK.S3.CodeAnalysis.dll" />
+    <Analyzer Include="..\packages\AWSSDK.S3.3.7.412.4\analyzers\dotnet\cs\SharedAnalysisCode.dll" />
+    <Analyzer Include="..\packages\AWSSDK.SageMaker.3.7.421.3\analyzers\dotnet\cs\AWSSDK.SageMaker.CodeAnalysis.dll" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -13,9 +14,9 @@ namespace MLOKit.Utilities.AzureML
 
 
         // modified code from - https://github.com/Azure-Samples/storage-dotnet-rest-api-with-auth
-        public static async Task<string> downloadFileFromStorageBlob(string storageAccountName, string storageAccountKey, string storageContainer, string relativePath, CancellationToken cancellationToken)
+        public static async Task<byte[]> downloadFileFromStorageBlob(string storageAccountName, string storageAccountKey, string storageContainer, string relativePath, CancellationToken cancellationToken)
         {
-            string base64StringOutput = "";
+            byte[] fileToReturn = null;
 
             
             // Construct the URI. This will look like this:
@@ -52,7 +53,8 @@ namespace MLOKit.Utilities.AzureML
                     if (httpResponseMessage.StatusCode == HttpStatusCode.OK)
                     {
                         String responseContent = await httpResponseMessage.Content.ReadAsStringAsync();
-                        base64StringOutput = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(responseContent));
+                        fileToReturn = System.Text.Encoding.UTF8.GetBytes(responseContent);
+
                         
 
                     }
@@ -60,7 +62,7 @@ namespace MLOKit.Utilities.AzureML
             }
 
 
-            return base64StringOutput;
+            return fileToReturn;
         }
 
 

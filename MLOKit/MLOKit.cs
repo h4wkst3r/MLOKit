@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Amazon;
 
 namespace MLOKit
 {
@@ -18,7 +19,11 @@ namespace MLOKit
         private static string project = "";
         private static string modelID = "";
         private static string datasetID = "";
-        private static List<string> approvedModules = new List<string> { "check", "list-projects", "list-models", "list-datasets", "download-model", "download-dataset" };
+        private static string url = "";
+        private static string sourceDir = "";
+        private static string notebookName = "";
+        private static string script = "";
+        private static List<string> approvedModules = new List<string> { "check", "list-projects", "list-models", "list-datasets", "download-model", "download-dataset", "poison-model", "list-notebooks", "add-notebook-trigger" };
 
 
         static async Task Main(string[] args)
@@ -130,6 +135,38 @@ namespace MLOKit
 
                 }
 
+                // url
+                if (argDict.ContainsKey("url"))
+                {
+
+                    url = argDict["url"];
+
+                }
+
+                // source-dir
+                if (argDict.ContainsKey("source-dir"))
+                {
+
+                    sourceDir = argDict["source-dir"];
+
+                }
+
+                // notebook-name
+                if (argDict.ContainsKey("notebook-name"))
+                {
+
+                    notebookName = argDict["notebook-name"];
+
+                }
+
+                // script
+                if (argDict.ContainsKey("script"))
+                {
+
+                    script = argDict["script"];
+
+                }
+
 
                 // determine if invalid module was given
                 if (!approvedModules.Contains(module))
@@ -161,6 +198,9 @@ namespace MLOKit
                             break;
                         case "download-model":
                             await Modules.AzureML.DownloadModel.execute(credential, platform, subscriptionID, region, resourceGroup, workspace, modelID);
+                            break;
+                        case "poison-model":
+                            await Modules.AzureML.PoisonModel.execute(credential, platform, subscriptionID, region, resourceGroup, workspace, modelID,sourceDir);
                             break;
                         case "download-dataset":
                             await Modules.AzureML.DownloadDataset.execute(credential, platform, subscriptionID, region, resourceGroup, workspace, datasetID);
@@ -227,6 +267,61 @@ namespace MLOKit
                             break;
                         case "download-dataset":
                             await Modules.VertexAI.DownloadDataset.execute(credential, platform, project, datasetID);
+                            break;
+                        default:
+                            Console.WriteLine("");
+                            Console.WriteLine("[-] ERROR: That module is not supported for " + platform + ". Please see README");
+                            Console.WriteLine("");
+                            break;
+                    }
+                }
+
+                else if (platform.ToLower().Equals("mlflow"))
+                {
+                    // get to the appropriate module that user specified
+                    switch (module.ToLower())
+                    {
+                        case "check":
+                            await Modules.MLFlow.Check.execute(credential, platform, url);
+                            break;
+                        case "list-models":
+                            await Modules.MLFlow.ListModels.execute(credential, platform, url);
+                            break;
+                        case "download-model":
+                            await Modules.MLFlow.DownloadModel.execute(credential, platform, url, modelID);
+                            break;
+                        default:
+                            Console.WriteLine("");
+                            Console.WriteLine("[-] ERROR: That module is not supported for " + platform + ". Please see README");
+                            Console.WriteLine("");
+                            break;
+                    }
+                }
+
+                else if (platform.ToLower().Equals("sagemaker"))
+                {
+                    RegionEndpoint endpoint = Utilities.SageMaker.RegionUtils.getRegionEndpoint((region));
+
+                    // get to the appropriate module that user specified
+                    switch (module.ToLower())
+                    {
+                        case "check":
+                            await Modules.SageMaker.Check.execute(credential, platform, endpoint);
+                            break;
+                        case "list-models":
+                            await Modules.SageMaker.ListModels.execute(credential, platform, endpoint);
+                            break;
+                        case "list-notebooks":
+                            await Modules.SageMaker.ListNotebooks.execute(credential, platform, endpoint);
+                            break;
+                        case "download-model":
+                            await Modules.SageMaker.DownloadModel.execute(credential, platform, modelID, endpoint);
+                            break;
+                        case "poison-model":
+                            await Modules.SageMaker.PoisonModel.execute(credential, platform, modelID,sourceDir, endpoint);
+                            break;
+                        case "add-notebook-trigger":
+                            await Modules.SageMaker.AddNotebookTrigger.execute(credential, platform, notebookName,script, endpoint);
                             break;
                         default:
                             Console.WriteLine("");

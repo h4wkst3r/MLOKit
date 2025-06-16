@@ -151,9 +151,9 @@ namespace MLOKit.Utilities.BigML
 
 
         // Download a dataset
-        public static async Task<string> downloadDataset(string credentials, string datasetID)
+        public static async Task<byte[]> downloadDataset(string credentials, string datasetID)
         {
-            string base64StringOutput = "";
+            byte[] fileContent = null;
 
             try
             {
@@ -178,11 +178,10 @@ namespace MLOKit.Utilities.BigML
 
                     // get web response 
                     HttpWebResponse myWebResponse = (HttpWebResponse)await webRequest.GetResponseAsync();
-                    string content;
-                    var reader = new StreamReader(myWebResponse.GetResponseStream());
-                    content = reader.ReadToEnd();
+                    MemoryStream ms = new MemoryStream();
+                    myWebResponse.GetResponseStream().CopyTo(ms);
+                    fileContent = ms.ToArray();
 
-                    base64StringOutput = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(content));
                  
                 }
             }
@@ -194,7 +193,7 @@ namespace MLOKit.Utilities.BigML
             }
 
 
-            return base64StringOutput;
+            return fileContent;
 
         }
 

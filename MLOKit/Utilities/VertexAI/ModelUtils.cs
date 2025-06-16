@@ -144,9 +144,9 @@ namespace MLOKit.Utilities.VertexAI
 
 
         // Download a model
-        public static async Task<string> downloadModel(string credentials, string mediaLink)
+        public static async Task<byte[]> downloadModel(string credentials, string mediaLink)
         {
-            string base64StringOutput = "";
+            byte[] fileContent = null;
 
             try
             {
@@ -170,11 +170,9 @@ namespace MLOKit.Utilities.VertexAI
 
                     // get web response 
                     HttpWebResponse myWebResponse = (HttpWebResponse)await webRequest.GetResponseAsync();
-                    string content;
-                    var reader = new StreamReader(myWebResponse.GetResponseStream());
-                    content = reader.ReadToEnd();
-
-                    base64StringOutput = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(content));
+                    MemoryStream ms = new MemoryStream();
+                    myWebResponse.GetResponseStream().CopyTo(ms);
+                    fileContent = ms.ToArray();
 
                 }
             }
@@ -186,7 +184,7 @@ namespace MLOKit.Utilities.VertexAI
             }
 
 
-            return base64StringOutput;
+            return fileContent;
 
         }
 

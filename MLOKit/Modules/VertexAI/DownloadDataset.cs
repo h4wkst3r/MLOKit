@@ -95,16 +95,16 @@ namespace MLOKit.Modules.VertexAI
                                         mediaLink = link;
 
                                         // download the dataset and store in base64
-                                        string datasetContent = await Utilities.VertexAI.DatasetUtils.downloadDataset(credential, mediaLink);
+                                        byte [] datasetContent = await Utilities.VertexAI.DatasetUtils.downloadDataset(credential, mediaLink);
 
                                         // if we got dataset back, then proceed
-                                        if (datasetContent != "")
+                                        if (datasetContent != null)
                                         {
                                             string fileOut = Utilities.FileUtils.generateRandomName();
                                             fileOut = "MLOKit-" + fileOut;
 
                                             // write dataset file to disk
-                                            File.WriteAllBytes(fileOut, Convert.FromBase64String(datasetContent));
+                                            File.WriteAllBytes(fileOut, datasetContent);
 
 
                                             Console.WriteLine("[+] SUCCESS: Dataset written to: " + Environment.CurrentDirectory + "\\" + fileOut);

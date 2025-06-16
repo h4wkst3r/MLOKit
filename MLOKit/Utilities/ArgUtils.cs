@@ -41,7 +41,6 @@ namespace MLOKit.Utilities
             string delim = "==================================================";
             output += "\n" + delim + "\n";
             output += "Module:\t\t" + module + "\n";
-            output += "Credential:\t" + credential + "\n";
             output += "Platform:\t" + platform + "\n";
             output += "Timestamp:\t" + DateTime.Now + "\n";
             output += delim + "\n";

@@ -187,8 +187,8 @@ namespace MLOKit.Modules.VertexAI
                             Console.WriteLine("[*] INFO: Downloading file at: " + theLink);
                             Console.WriteLine("");
 
-                            // download the file and store in base64
-                            string downloadedFile = await Utilities.VertexAI.ModelUtils.downloadModel(credential, theLink);
+                            // download the file
+                            byte [] downloadedFile = await Utilities.VertexAI.ModelUtils.downloadModel(credential, theLink);
 
                             // do some cleanup on the folder and file name so it looks readable
                             string finalFolderPath = "";
@@ -199,7 +199,7 @@ namespace MLOKit.Modules.VertexAI
 
                             // write downloaded file to disk in proper directory structure to mimic what is in GCloud storage
                             Directory.CreateDirectory(outputDir.FullName + "\\" + finalFolderPath);
-                            File.WriteAllBytes(outputDir.FullName + "\\" + finalFolderPath + "\\" +  finalFileName, Convert.FromBase64String(downloadedFile));
+                            File.WriteAllBytes(outputDir.FullName + "\\" + finalFolderPath + "\\" +  finalFileName, downloadedFile);
 
                         }
 
