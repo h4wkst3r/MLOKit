@@ -39,28 +39,50 @@ namespace MLOKit.Modules.SageMaker
                 string secretKey = splitCreds[1];
 
                 AmazonSageMakerClient sagemakerClient = new AmazonSageMakerClient(accessKey, secretKey, endpoint);
-                ListNotebookInstancesRequest notebookRequest = new ListNotebookInstancesRequest();
-                ListNotebookInstancesResponse response = await sagemakerClient.ListNotebookInstancesAsync(notebookRequest);
 
-                // valid credentials
-                if (response.HttpStatusCode.ToString().ToLower().Equals("ok"))
+                string nextToken = null;
+                do
                 {
-                    Console.WriteLine("[+] SUCCESS: Credentials are valid");
-                    Console.WriteLine("");
-
-                    // create table header
-                    string tableHeader = string.Format("{0,50} | {1,20} | {2,20} | {3,30}", "Notebook Name", "Creation Date", "Notebook Status", "Notebook Lifecycle Config");
-                    Console.WriteLine(tableHeader);
-                    Console.WriteLine(new String('-', tableHeader.Length));
-
-                    // iterate through each notebook and list details
-                    foreach (var notebook in response.NotebookInstances)
+                    var request = new ListNotebookInstancesRequest
                     {
-                        string creationTime = notebook.CreationTime.ToShortDateString();
-                        Console.WriteLine("{0,50} | {1,20} | {2,20} | {3,30}", notebook.NotebookInstanceName, creationTime, notebook.NotebookInstanceStatus, notebook.NotebookInstanceLifecycleConfigName);
+                        MaxResults = 100, // Optional: control page size (max 100)
+                        NextToken = nextToken
+                    };
+
+                    ListNotebookInstancesResponse response = await sagemakerClient.ListNotebookInstancesAsync(request);
+
+                    // valid credentials
+                    if (response.HttpStatusCode.ToString().ToLower().Equals("ok"))
+                    {
+                        Console.WriteLine("[+] SUCCESS: Credentials are valid");
+                        Console.WriteLine("");
+
+                        // create table header
+                        string tableHeader = string.Format("{0,50} | {1,20} | {2,20} | {3,30}", "Notebook Name", "Creation Date", "Notebook Status", "Notebook Lifecycle Config");
+                        Console.WriteLine(tableHeader);
+                        Console.WriteLine(new String('-', tableHeader.Length));
+
                     }
 
-                }
+                    foreach (var notebookInstanceSummary in response.NotebookInstances)
+                    {
+                        string creationTime = notebookInstanceSummary.CreationTime.ToShortDateString();
+                        Console.WriteLine("{0,50} | {1,20} | {2,20} | {3,30}", notebookInstanceSummary.NotebookInstanceName, creationTime, notebookInstanceSummary.NotebookInstanceStatus, notebookInstanceSummary.NotebookInstanceLifecycleConfigName);
+                    }
+
+                    nextToken = response.NextToken;
+
+                } while (!string.IsNullOrEmpty(nextToken));
+
+
+
+
+
+
+
+
+
+
 
 
             }

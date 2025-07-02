@@ -6,7 +6,7 @@ MLOps Attack Toolkit - MLOKit is a toolkit that can be used to attack MLOps plat
 
 
 ## Release
-* Version 1.1 of MLOKit can be found in Releases
+* Version 1.1.1 of MLOKit can be found in Releases
 
 ## Table of Contents
 

@@ -1,5 +1,5 @@
-﻿using Amazon.Runtime;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,132 +17,59 @@ namespace MLOKit.Utilities.AzureML
         public static async Task<List<Objects.AzureML.Model>> getAllModels(string credentials, string subscriptionID, string region, string resourceGroup, string workspace)
         {
             List<Objects.AzureML.Model> modelList = new List<Objects.AzureML.Model>();
+            string baseUrl = $"https://{region}.modelmanagement.azureml.net/modelmanagement/v1.0/subscriptions/{subscriptionID}/resourceGroups/{resourceGroup}/providers/Microsoft.MachineLearningServices/workspaces/{workspace}/models?api-version=2023-10-01";
+            string nextLink = baseUrl;
 
             try
             {
-
-                // ignore SSL errors
-                ServicePointManager.ServerCertificateValidationCallback = delegate (object s, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) { return true; };
+                ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
                 ServicePointManager.Expect100Continue = true;
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-                // web request to get list of models
-                HttpWebRequest webRequest = (HttpWebRequest)System.Net.WebRequest.Create("https://" + region + ".modelmanagement.azureml.net/modelmanagement/v1.0/subscriptions/" + subscriptionID + "/resourceGroups/" + resourceGroup + "/providers/Microsoft.MachineLearningServices/workspaces/" + workspace + "/models?api-version=2023-10-01");
-                if (webRequest != null)
+                while (!string.IsNullOrEmpty(nextLink))
                 {
-
-                    // set header values
+                    HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(nextLink);
                     webRequest.Method = "GET";
                     webRequest.ContentType = "application/json";
                     webRequest.UserAgent = "MLOKit-e977ac02118a3cb2c584d92a324e41e9";
                     webRequest.Headers.Add("Authorization", "Bearer " + credentials);
 
-
-                    // get web response and status code
-                    HttpWebResponse myWebResponse = (HttpWebResponse)await webRequest.GetResponseAsync();
-                    string content;
-                    var reader = new StreamReader(myWebResponse.GetResponseStream());
-                    content = reader.ReadToEnd();
-
-
-                    // parse the JSON output and display results
-                    JsonTextReader jsonResult = new JsonTextReader(new StringReader(content));
-
-                    string modelID = "";
-                    string modelName = "";
-                    string assetID = "";
-                    string createdTime = "";
-                    string modifiedTime = "";
-                    string provisioningState = "";
-                    string modelType = "";
-                    string propName = "";
-
-                    // read the json results
-                    while (jsonResult.Read())
+                    using (HttpWebResponse response = (HttpWebResponse)await webRequest.GetResponseAsync())
+                    using (StreamReader reader = new StreamReader(response.GetResponseStream()))
                     {
+                        string content = await reader.ReadToEndAsync();
+                        JObject parsedJson = JObject.Parse(content);
 
-                        switch (jsonResult.TokenType.ToString())
+                        JArray valueArray = (JArray)parsedJson["value"];
+                        foreach (JObject model in valueArray)
                         {
-                            case "StartObject":
-                                break;
-                            case "EndObject":
+                            string modelID = model["id"]?.ToString();
+                            string modelName = model["name"]?.ToString();
+                            string provisioningState = model["provisioningState"]?.ToString();
+                            string modelType = model["modelType"]?.ToString();
+                            string assetID = model["url"]?.ToString()?.Split('/')[3];
+                            string createdTime = model["createdTime"]?.ToString();
+                            string modifiedTime = model["modifiedTime"]?.ToString();
 
-                                // if model already doesn't exist in our list, add it
-                                if (!doesModelAlreadyExistInList(modelID, modelList) && modelID != "" && modelName != "" && assetID != "" && createdTime != "" && modifiedTime != "" && provisioningState != "" && modelType != "")
-                                {
-                                    modelList.Add(new Objects.AzureML.Model(modelID, modelName, assetID, createdTime, modifiedTime, provisioningState, modelType));
-                                    modelID = "";
-                                    modelName = "";
-                                    assetID = "";
-                                    createdTime = "";
-                                    modifiedTime = "";
-                                    provisioningState = "";
-                                    modelType = "";
-                                }
-                                break;
-                            case "StartArray":
-                                break;
-                            case "EndArray":
-                                break;
-                            case "PropertyName":
-                                propName = jsonResult.Value.ToString();
-                                break;
-                            case "String":
-                                if (propName.ToLower().Equals("id"))
-                                {
-                                    modelID = jsonResult.Value.ToString();
-                                }
-                                if (propName.ToLower().Equals("name"))
-                                {
-                                    modelName = jsonResult.Value.ToString();
-                                }
-                                if (propName.ToLower().Equals("provisioningstate"))
-                                {
-                                    provisioningState = jsonResult.Value.ToString();
-                                }
-                                if (propName.ToLower().Equals("modeltype"))
-                                {
-                                    modelType = jsonResult.Value.ToString();
-                                }
-                                if (propName.ToLower().Equals("url"))
-                                {
-                                    // format of json output is - aml://asset/[ASSET_ID]
-                                    assetID = jsonResult.Value.ToString().Split('/')[3];
-                                }
-
-                                break;
-                            case "Date":
-                                if (propName.ToLower().Equals("createdtime"))
-                                {
-                                    createdTime = jsonResult.Value.ToString();
-                                }
-                                if (propName.ToLower().Equals("modifiedtime"))
-                                {
-                                    modifiedTime = jsonResult.Value.ToString();
-                                }
-                                break;
-                            case "Boolean":
-                                break;
-                            default:
-                                break;
-
+                            if (!string.IsNullOrEmpty(modelID) && !doesModelAlreadyExistInList(modelID, modelList))
+                            {
+                                modelList.Add(new Objects.AzureML.Model(modelID, modelName, assetID, createdTime, modifiedTime, provisioningState, modelType));
+                            }
                         }
 
+                        // Get nextLink for paging
+                        nextLink = parsedJson["nextLink"]?.ToString();
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("");
-                Console.WriteLine("[-] ERROR: " + ex.Message);
-                Console.WriteLine("");
-                
+                Console.WriteLine("\n[-] ERROR: " + ex.Message + "\n");
             }
 
-
             return modelList;
-
         }
+
 
 
         // get a model my model ID

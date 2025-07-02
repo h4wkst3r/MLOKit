@@ -39,27 +39,45 @@ namespace MLOKit.Modules.SageMaker
                 string secretKey = splitCreds[1];
 
                 AmazonSageMakerClient sagemakerClient = new AmazonSageMakerClient(accessKey, secretKey, endpoint);
-                ListModelsResponse response = await sagemakerClient.ListModelsAsync(new ListModelsRequest());
 
-                // valid credentials
-                if (response.HttpStatusCode.ToString().ToLower().Equals("ok"))
+                string nextToken = null;
+                do
                 {
-                    Console.WriteLine("[+] SUCCESS: Credentials are valid");
-                    Console.WriteLine("");
-
-                    // create table header
-                    string tableHeader = string.Format("{0,50} | {1,20} | {2,50}", "Model Name", "Creation Date", "Model ARN");
-                    Console.WriteLine(tableHeader);
-                    Console.WriteLine(new String('-', tableHeader.Length));
-
-                    // iterate through each model and list details
-                    foreach (var model in response.Models)
+                    var request = new ListModelsRequest
                     {
-                        string creationTime = model.CreationTime.ToShortDateString();
-                        Console.WriteLine("{0,50} | {1,20} | {2,50}", model.ModelName, creationTime, model.ModelArn);
+                        MaxResults = 100, // Optional: control page size (max 100)
+                        NextToken = nextToken
+                    };
+
+                    ListModelsResponse response = await sagemakerClient.ListModelsAsync(request);
+
+                    // valid credentials
+                    if (response.HttpStatusCode.ToString().ToLower().Equals("ok"))
+                    {
+                        Console.WriteLine("[+] SUCCESS: Credentials are valid");
+                        Console.WriteLine("");
+
+                        // create table header
+                        string tableHeader = string.Format("{0,50} | {1,20} | {2,50}", "Model Name", "Creation Date", "Model ARN");
+                        Console.WriteLine(tableHeader);
+                        Console.WriteLine(new String('-', tableHeader.Length));
+
                     }
 
-                }
+
+                    foreach (var modelSummary in response.Models)
+                    {
+                        string creationTime = modelSummary.CreationTime.ToShortDateString();
+                        Console.WriteLine("{0,50} | {1,20} | {2,50}", modelSummary.ModelName, creationTime, modelSummary.ModelArn);
+                    }
+
+                    nextToken = response.NextToken;
+
+                } while (!string.IsNullOrEmpty(nextToken));
+
+
+
+    
 
 
             }
