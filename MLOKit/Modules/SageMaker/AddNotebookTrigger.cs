@@ -72,7 +72,12 @@ namespace MLOKit.Modules.SageMaker
                     if (stopNotebookResponse.HttpStatusCode.ToString().ToLower().Equals("ok"))
                     {
 
-                        ListNotebookInstancesRequest notebookRequest = new ListNotebookInstancesRequest();
+                        string nextToken = null;
+                        var notebookRequest = new ListNotebookInstancesRequest
+                        {
+                            MaxResults = 100, // Optional: control page size (max 100)
+                            NextToken = nextToken
+                        };
                         notebookRequest.NameContains = notebookName;
                         ListNotebookInstancesResponse response = await sagemakerClient.ListNotebookInstancesAsync(notebookRequest);
 
@@ -119,7 +124,12 @@ namespace MLOKit.Modules.SageMaker
                         Console.WriteLine(tableHeader);
                         Console.WriteLine(new String('-', tableHeader.Length));
 
-                        ListNotebookInstancesRequest notebookRequest = new ListNotebookInstancesRequest();
+                        string nextToken = null;
+                        var notebookRequest = new ListNotebookInstancesRequest
+                        {
+                            MaxResults = 100, // Optional: control page size (max 100)
+                            NextToken = nextToken
+                        };
                         notebookRequest.NameContains = notebookName;
                         ListNotebookInstancesResponse response = await sagemakerClient.ListNotebookInstancesAsync(notebookRequest);
 
@@ -155,8 +165,12 @@ namespace MLOKit.Modules.SageMaker
                         string tableHeader = string.Format("{0,50} | {1,20} | {2,20} | {3,30}", "Notebook Name", "Creation Date", "Notebook Status", "Notebook Lifecycle Config");
                         Console.WriteLine(tableHeader);
                         Console.WriteLine(new String('-', tableHeader.Length));
-
-                        ListNotebookInstancesRequest notebookRequest = new ListNotebookInstancesRequest();
+                        string nextToken = null;
+                        var notebookRequest = new ListNotebookInstancesRequest
+                        {
+                            MaxResults = 100, // Optional: control page size (max 100)
+                            NextToken = nextToken
+                        };
                         notebookRequest.NameContains = notebookName;
                         ListNotebookInstancesResponse response = await sagemakerClient.ListNotebookInstancesAsync(notebookRequest);
 
