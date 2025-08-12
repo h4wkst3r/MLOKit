@@ -57,7 +57,7 @@ namespace MLOKit.Utilities.Palantir
             return datasetList;
         }
 
-        // explore datasets from App folder (original functionality)
+        // explore datasets from App folder
         private static async Task<List<Objects.Palantir.Dataset>> exploreFromAppFolder(string token, string tenant, string apprid)
         {
             List<Objects.Palantir.Dataset> datasetList = new List<Objects.Palantir.Dataset>();
@@ -515,6 +515,141 @@ namespace MLOKit.Utilities.Palantir
             return itemName.Contains("AIP Now Ontology") || 
                    itemName.Contains("[Example]") || 
                    itemPath.Contains("[Example]");
+        }
+
+        // upload dataset to Palantir
+        public static async Task<string> uploadDataset(string credentials, string datasetName, byte[] fileContent, string originalFileName)
+        {
+            string datasetRid = "";
+
+            try
+            {
+                // ignore SSL errors
+                ServicePointManager.ServerCertificateValidationCallback = delegate (object s, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) { return true; };
+                ServicePointManager.Expect100Continue = true;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+                string[] splitCreds = credentials.Split(';');
+                if (splitCreds.Length < 2) return datasetRid;
+
+                string token = splitCreds[0];
+                string tenant = splitCreds[1];
+                string apprid = splitCreds.Length >= 3 ? splitCreds[2] : "";
+
+                // Create the dataset
+                string createDatasetUrl = $"https://{tenant}/api/v2/datasets";
+                HttpWebRequest createRequest = (HttpWebRequest)System.Net.WebRequest.Create(createDatasetUrl);
+                if (createRequest != null)
+                {
+                    createRequest.Method = "POST";
+                    createRequest.ContentType = "application/json";
+                    createRequest.UserAgent = "MLOKit-e977ac02118a3cb2c584d92a324e41e9";
+                    createRequest.Headers.Add("Authorization", "Bearer " + token);
+
+                    string createPayload = $"{{\"name\":\"{datasetName}\",\"parentFolderRid\":\"{(string.IsNullOrEmpty(apprid) ? "" : apprid)}\"}}";
+                    byte[] createData = System.Text.Encoding.UTF8.GetBytes(createPayload);
+                    createRequest.ContentLength = createData.Length;
+
+                    using (Stream requestStream = await createRequest.GetRequestStreamAsync())
+                    {
+                        requestStream.Write(createData, 0, createData.Length);
+                    }
+
+                    HttpWebResponse createResponse = (HttpWebResponse)await createRequest.GetResponseAsync();
+                    string createContent;
+                    using (var reader = new StreamReader(createResponse.GetResponseStream()))
+                    {
+                        createContent = reader.ReadToEnd();
+                    }
+
+                    datasetRid = parseDatasetRidFromCreateResponse(createContent);
+
+                    if (string.IsNullOrEmpty(datasetRid))
+                    {
+                        Console.WriteLine("[-] ERROR: Failed to create dataset or parse dataset RID");
+                        return datasetRid;
+                    }
+
+                    Console.WriteLine("[*] INFO: Dataset created with RID: " + datasetRid);
+
+                    // Upload the file content
+                    string uploadUrl = $"https://{tenant}/api/v2/datasets/{datasetRid}/files";
+                    HttpWebRequest uploadRequest = (HttpWebRequest)System.Net.WebRequest.Create(uploadUrl);
+                    if (uploadRequest != null)
+                    {
+                        uploadRequest.Method = "POST";
+                        uploadRequest.UserAgent = "MLOKit-e977ac02118a3cb2c584d92a324e41e9";
+                        uploadRequest.Headers.Add("Authorization", "Bearer " + token);
+
+                        // multipart form data
+                        string boundary = "----WebKitFormBoundary" + DateTime.Now.Ticks.ToString("x");
+                        uploadRequest.ContentType = "multipart/form-data; boundary=" + boundary;
+
+                        using (var requestStream = await uploadRequest.GetRequestStreamAsync())
+                        {
+                            // multipart form data
+                            string fileName = Path.GetFileName(originalFileName);
+                            string header = $"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{fileName}\"\r\nContent-Type: application/octet-stream\r\n\r\n";
+                            byte[] headerBytes = System.Text.Encoding.UTF8.GetBytes(header);
+                            
+                            requestStream.Write(headerBytes, 0, headerBytes.Length);
+                            requestStream.Write(fileContent, 0, fileContent.Length);
+                            
+                            string footer = $"\r\n--{boundary}--\r\n";
+                            byte[] footerBytes = System.Text.Encoding.UTF8.GetBytes(footer);
+                            requestStream.Write(footerBytes, 0, footerBytes.Length);
+                        }
+
+                        HttpWebResponse uploadResponse = (HttpWebResponse)await uploadRequest.GetResponseAsync();
+                        string uploadContent;
+                        using (var reader = new StreamReader(uploadResponse.GetResponseStream()))
+                        {
+                            uploadContent = reader.ReadToEnd();
+                        }
+
+                        Console.WriteLine("[*] INFO: File uploaded successfully");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("[-] ERROR uploading dataset: " + ex.Message);
+                datasetRid = ""; 
+            }
+
+            return datasetRid;
+        }
+
+        // helper method to parse dataset RID from create response
+        private static string parseDatasetRidFromCreateResponse(string jsonContent)
+        {
+            try
+            {
+                JsonTextReader jsonResult = new JsonTextReader(new StringReader(jsonContent));
+                string propName = "";
+
+                while (jsonResult.Read())
+                {
+                    switch (jsonResult.TokenType.ToString())
+                    {
+                        case "PropertyName":
+                            propName = jsonResult.Value.ToString();
+                            break;
+                        case "String":
+                            if (propName == "rid")
+                            {
+                                return jsonResult.Value.ToString();
+                            }
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[-] ERROR parsing dataset RID: {ex.Message}");
+            }
+
+            return "";
         }
 
         // remove duplicate datasets based on RID

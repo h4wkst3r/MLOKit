@@ -82,6 +82,7 @@
     <Compile Include="Modules\Palantir\Check.cs" />
     <Compile Include="Modules\Palantir\DownloadDataset.cs" />
     <Compile Include="Modules\Palantir\ListDatasets.cs" />
+    <Compile Include="Modules\Palantir\UploadDataset.cs" />
     <Compile Include="Modules\SageMaker\AddNotebookTrigger.cs" />
     <Compile Include="Modules\SageMaker\Check.cs" />
     <Compile Include="Modules\SageMaker\DownloadModel.cs" />

@@ -74,6 +74,7 @@ Take the below steps to setup Visual Studio in order to compile the project your
 * **list-datasets** - List the available training datasets
 * **download-model** - Download a given ML model
 * **download-dataset** - Download a given training dataset
+* **upload-dataset** - Upload a training dataset
 * **poison-model** - Poison a given ML model
 * **list-notebooks** - List the available notebook instances
 * **add-notebook-trigger** - Add a notebook trigger for code execution
@@ -108,7 +109,8 @@ The below arguments are required for all command modules.
 * **/model-id:** - Applicable to all platforms. Only applies to some command modules.
 * **/dataset-id:** - Applicable to all platforms. Only applies to some command modules.
 * **/url:** - Applicable to `mlflow` platform only. Only applies to some command modules.
-* **/source-dir:** - Applicable to `azureml` and `sagemaker` platforms only. Only applies to one command module.
+* **/source-dir:** - Applicable to `azureml`, `sagemaker`, and `palantir` platforms only. Only applies to some command modules.
+* **/dataset-name:** - Applicable to `palantir` platform only. Only applies to upload-dataset command module.
 * **/notebook-name:** - Applicable to `sagemaker` platform only. Only applies to some command modules.
 * **/script:** - Applicable to `sagemaker` platform only. Only applies to one command module.
 
@@ -250,6 +252,7 @@ Module  | Azure ML (`azureml`) | BigML (`bigml`) | Vertex AI (`vertexai`) | MLFl
 `list-datasets` | X | X | X | | | X
 `download-model` | X | X | X | X | X | 
 `download-dataset` | X | X | X | | | X
+`upload-dataset` | | | | | | X
 `poison-model` | X |  |  | | X | 
 `list-notebooks` |  |  |  | | X | 
 `add-notebook-trigger` |  |  |  | | X | 
@@ -637,6 +640,59 @@ Timestamp:      4/7/2024 2:19:23 PM
 
 
 [+] SUCCESS: Dataset written to: C:\Temp\MLOKit-nKBqOWLO
+
+```
+
+### Upload Dataset
+
+#### Use Case
+
+> *Upload a training dataset to the Palantir platform*
+
+#### Syntax
+
+Supply the `upload-dataset` module, along with the MLOps platform in the `/platform:` command argument. Additionally, provide a credential in the `/credential:` command argument, a dataset name in the `/dataset-name:` command argument, and the local file path in the `/source-dir:` command argument. The dataset file will be uploaded to your Palantir tenant.
+
+##### Palantir
+
+For the `palantir` platform, you will need to provide a dataset name in the `/dataset-name:` command argument and the path to your local dataset file in the `/source-dir:` command argument.
+
+**With App RID (targeted upload):**
+`MLOKit.exe upload-dataset /platform:palantir /credential:token;tenant;apprid /dataset-name:[DATASET_NAME] /source-dir:[LOCAL_FILE_PATH]`
+
+**Without App RID (upload to default location):**
+`MLOKit.exe upload-dataset /platform:palantir /credential:token;tenant /dataset-name:[DATASET_NAME] /source-dir:[LOCAL_FILE_PATH]`
+
+##### Example Output
+
+```
+C:\>MLOKit.exe upload-dataset /platform:palantir /credential:token;tenant /dataset-name:customer-data /source-dir:C:\data\customers.csv
+
+==================================================
+Module:         upload-dataset
+Platform:       palantir
+Timestamp:      8/11/2025 2:30:15 PM
+==================================================
+
+
+[*] INFO: Performing upload-dataset module for palantir
+
+
+[*] INFO: Checking credentials provided
+
+[+] SUCCESS: Credentials provided are VALID.
+
+
+[*] INFO: Uploading dataset file: C:\data\customers.csv
+
+
+[*] INFO: Creating dataset with name: customer-data
+
+
+[+] SUCCESS: Dataset uploaded successfully with RID: ri.compass.main.dataset.abc123def456
+
+
+[*] INFO: Dataset available at: https://tenant.palantirfoundry.com/workspace/dataset/ri.compass.main.dataset.abc123def456
 
 ```
 

@@ -23,7 +23,8 @@ namespace MLOKit
         private static string sourceDir = "";
         private static string notebookName = "";
         private static string script = "";
-        private static List<string> approvedModules = new List<string> { "check", "list-projects", "list-models", "list-datasets", "download-model", "download-dataset", "poison-model", "list-notebooks", "add-notebook-trigger" };
+        private static string datasetName = "";
+        private static List<string> approvedModules = new List<string> { "check", "list-projects", "list-models", "list-datasets", "download-model", "download-dataset", "upload-dataset", "poison-model", "list-notebooks", "add-notebook-trigger" };
 
 
         static async Task Main(string[] args)
@@ -164,6 +165,14 @@ namespace MLOKit
                 {
 
                     script = argDict["script"];
+
+                }
+
+                // dataset-name
+                if (argDict.ContainsKey("dataset-name"))
+                {
+
+                    datasetName = argDict["dataset-name"];
 
                 }
 
@@ -344,6 +353,9 @@ namespace MLOKit
                             break;
                         case "download-dataset":
                             await Modules.Palantir.DownloadDataset.execute(credential, platform, datasetID);
+                            break;
+                        case "upload-dataset":
+                            await Modules.Palantir.UploadDataset.execute(credential, platform, datasetName, sourceDir);
                             break;
                         default:
                             Console.WriteLine("");
