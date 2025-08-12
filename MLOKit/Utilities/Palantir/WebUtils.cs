@@ -9,7 +9,7 @@ namespace MLOKit.Utilities.Palantir
     class WebUtils
     {
         // determine whether credentials provided are valid or not
-        public static async Task<bool> credsValid(string credentials)
+        public static async Task<bool> credsValid(string token, string url)
         {
             // value to return whether credentials provided were valid or not
             bool areCredsValid = false;
@@ -19,21 +19,10 @@ namespace MLOKit.Utilities.Palantir
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-            string[] splitCreds = credentials.Split(';');
-
-            // validate credential format - require at least token and tenant
-            if (splitCreds.Length < 2)
-            {
-                return false;
-            }
-
-            string token = splitCreds[0];
-            string tenant = splitCreds[1];
-
             try
             {
                 // web request to check auth - test with ontologies endpoint
-                HttpWebRequest webRequest = (HttpWebRequest)System.Net.WebRequest.Create($"https://{tenant}/api/v1/ontologies");
+                HttpWebRequest webRequest = (HttpWebRequest)System.Net.WebRequest.Create(url);
                 if (webRequest != null)
                 {
                     // set header values

@@ -1,5 +1,3 @@
-using System;
-
 namespace MLOKit.Objects.Palantir
 {
     class Ontology
