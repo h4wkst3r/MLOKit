@@ -331,6 +331,28 @@ namespace MLOKit
                     }
                 }
 
+                else if (platform.ToLower().Equals("palantir"))
+                {
+                    // get to the appropriate module that user specified
+                    switch (module.ToLower())
+                    {
+                        case "check":
+                            await Modules.Palantir.Check.execute(credential, platform);
+                            break;
+                        case "list-datasets":
+                            await Modules.Palantir.ListDatasets.execute(credential, platform);
+                            break;
+                        case "download-dataset":
+                            await Modules.Palantir.DownloadDataset.execute(credential, platform, datasetID);
+                            break;
+                        default:
+                            Console.WriteLine("");
+                            Console.WriteLine("[-] ERROR: That module is not supported for " + platform + ". Please see README");
+                            Console.WriteLine("");
+                            break;
+                    }
+                }
+
                 // invalid platform given
                 else
                 {

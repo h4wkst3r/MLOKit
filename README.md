@@ -189,27 +189,70 @@ You can obtain all required information from this file, such as the client ID, c
 
 API key is alphanumeric and is provided as a GET variable name of `api_key=`.
 
+### Bearer Token
+
+#### Palantir AIP
+
+For Palantir AIP authentication, you need a Bearer token and tenant URL. The App RID is **optional** - if not provided, MLOKit will automatically discover datasets using the Spaces API. Within the `/credential:` argument, provide these values separated by `;`.
+
+**With App RID (targeted discovery):**
+`/credential:eyJwbG50ciI6...;tenant.palantirfoundry.com;ri.compass.main.folder.abc123`
+
+**Without App RID (automatic Spaces API discovery):**
+`/credential:eyJwbG50ciI6...;tenant.palantirfoundry.com`
+
+You can obtain these values from:
+
+* **Token**: From your Palantir AIP authentication session or API tokens
+* **Tenant**: Your Palantir Foundry tenant URL (without https://)
+* **App RID** *(Optional)*: The Resource Identifier of the App/folder containing your datasets. If not provided, MLOKit will automatically discover datasets across all accessible spaces and projects using the Spaces API.
+
 ### Access Key and Secret Access Key
 
 ####  SageMaker
 
 This only applies to SageMaker. Within the `/credential:` argument provide your `ACCESS_KEY` and `SECRET_ACCESS_KEY` separate by a `;`. For example `/credential:ABC123;AAAFDSKAFLKASDFJSAF`.
 
+## Palantir Dataset Discovery Methods
+
+MLOKit supports two discovery methods for Palantir AIP datasets:
+
+### Targeted Discovery (App RID)
+
+When you provide an App RID in your credentials (`token;tenant;apprid`), MLOKit will:
+
+* Explore datasets within the specified App folder
+* Recursively search subfolders up to 3 levels deep
+* Filter out example content automatically
+* Provide faster, focused results
+
+### Automatic Discovery (Spaces API)
+
+When you omit the App RID (`token;tenant`), MLOKit will:
+
+* Query the Spaces API to discover all accessible spaces and projects
+* Recursively explore each space for datasets up to 4 levels deep
+* Automatically filter out example and demo content
+* Provide comprehensive tenant-wide dataset discovery
+* Remove duplicate datasets found across multiple spaces
+
+**Note:** The automatic discovery method may take longer but provides broader coverage when you don't have a specific App RID or want to discover all accessible datasets.
+
 ## Module Details Table
 
 The below table shows where each module is supported
 
-Module  | Azure ML (`azureml`) | BigML (`bigml`) | Vertex AI (`vertexai`) | MLFlow (`mlflow`) | Sagemaker (`sagemaker`)
-:---: |:---: | :---: | :---:  | :---:  | :---:
-`check` | X | X | X | X | X
-`list-projects` | X | X | X | | 
-`list-models` | X | X | X | X | X
-`list-datasets` | X | X | X | | 
-`download-model` | X | X | X | X | X
-`download-dataset` | X | X | X | | 
-`poison-model` | X |  |  | | X
-`list-notebooks` |  |  |  | | X
-`add-notebook-trigger` |  |  |  | | X
+Module  | Azure ML (`azureml`) | BigML (`bigml`) | Vertex AI (`vertexai`) | MLFlow (`mlflow`) | Sagemaker (`sagemaker`) | Palantir (`palantir`)
+:---: |:---: | :---: | :---:  | :---:  | :---: | :---:
+`check` | X | X | X | X | X | X
+`list-projects` | X | X | X | | | 
+`list-models` | X | X | X | X | X | 
+`list-datasets` | X | X | X | | | X
+`download-model` | X | X | X | X | X | 
+`download-dataset` | X | X | X | | | X
+`poison-model` | X |  |  | | X | 
+`list-notebooks` |  |  |  | | X | 
+`add-notebook-trigger` |  |  |  | | X | 
 
 
 ## Examples
@@ -245,6 +288,14 @@ For the `mlflow` platform, you will also have to provide a URL in the `/url:` co
 ##### SageMaker
 
 `MLOKit.exe check /platform:sagemaker /credential:access_key;secret_key /region:[REGION_NAME]`
+
+##### Palantir
+
+**With App RID (targeted discovery):**
+`MLOKit.exe check /platform:palantir /credential:token;tenant;apprid`
+
+**Without App RID (automatic Spaces API discovery):**
+`MLOKit.exe check /platform:palantir /credential:token;tenant`
 
 ##### Example Output
 
@@ -414,6 +465,14 @@ For the `vertexai` platform, you will also have to provide a project in the `/pr
 
 `MLOKit.exe list-datasets /platform:vertexai /credential:ya29.. /project:[PROJECT_NAME]`
 
+##### Palantir
+
+**With App RID (targeted discovery):**
+`MLOKit.exe list-datasets /platform:palantir /credential:token;tenant;apprid`
+
+**Without App RID (automatic Spaces API discovery):**
+`MLOKit.exe list-datasets /platform:palantir /credential:token;tenant`
+
 ##### Example Output
 
 ```
@@ -543,6 +602,16 @@ For the `bigml` platform, you will also have to provide a dataset ID in the `/da
 For the `vertexai` platform, you will also have to provide a project name in the `/project:` command argument and a dataset ID in the `/dataset-id:` command argument.
 
 `MLOKit.exe download-dataset /platform:vertexai /credential:ya29.. /project:[PROJECT_NAME] /dataset-id:[DATASET_ID]`
+
+##### Palantir
+
+For the `palantir` platform, you will need to provide a dataset RID in the `/dataset-id:` command argument.
+
+**With App RID (targeted discovery):**
+`MLOKit.exe download-dataset /platform:palantir /credential:token;tenant;apprid /dataset-id:[DATASET_RID]`
+
+**Without App RID (automatic Spaces API discovery):**
+`MLOKit.exe download-dataset /platform:palantir /credential:token;tenant /dataset-id:[DATASET_RID]`
 
 ##### Example Output
 

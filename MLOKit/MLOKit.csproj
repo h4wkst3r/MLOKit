@@ -79,6 +79,9 @@
     <Compile Include="Modules\MLFlow\Check.cs" />
     <Compile Include="Modules\MLFlow\DownloadModel.cs" />
     <Compile Include="Modules\MLFlow\ListModels.cs" />
+    <Compile Include="Modules\Palantir\Check.cs" />
+    <Compile Include="Modules\Palantir\DownloadDataset.cs" />
+    <Compile Include="Modules\Palantir\ListDatasets.cs" />
     <Compile Include="Modules\SageMaker\AddNotebookTrigger.cs" />
     <Compile Include="Modules\SageMaker\Check.cs" />
     <Compile Include="Modules\SageMaker\DownloadModel.cs" />
@@ -104,6 +107,8 @@
     <Compile Include="Objects\MLFlow\Experiment.cs" />
     <Compile Include="Objects\MLFlow\Model.cs" />
     <Compile Include="Objects\MLFlow\Run.cs" />
+    <Compile Include="Objects\Palantir\Dataset.cs" />
+    <Compile Include="Objects\Palantir\Ontology.cs" />
     <Compile Include="Objects\VertexAI\Dataset.cs" />
     <Compile Include="Objects\VertexAI\Model.cs" />
     <Compile Include="Objects\VertexAI\Project.cs" />
@@ -125,6 +130,8 @@
     <Compile Include="Utilities\MLFlow\ModelUtils.cs" />
     <Compile Include="Utilities\MLFlow\RunUtils.cs" />
     <Compile Include="Utilities\MLFlow\WebUtils.cs" />
+    <Compile Include="Utilities\Palantir\DatasetUtils.cs" />
+    <Compile Include="Utilities\Palantir\WebUtils.cs" />
     <Compile Include="Utilities\SageMaker\RegionUtils.cs" />
     <Compile Include="Utilities\VertexAI\BucketUtils.cs" />
     <Compile Include="Utilities\VertexAI\DatasetUtils.cs" />
