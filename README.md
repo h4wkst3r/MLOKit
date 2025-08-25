@@ -74,6 +74,7 @@ Take the below steps to setup Visual Studio in order to compile the project your
 * **list-datasets** - List the available training datasets
 * **download-model** - Download a given ML model
 * **download-dataset** - Download a given training dataset
+* **upload-dataset** - Upload a training dataset
 * **poison-model** - Poison a given ML model
 * **list-notebooks** - List the available notebook instances
 * **add-notebook-trigger** - Add a notebook trigger for code execution
@@ -108,7 +109,8 @@ The below arguments are required for all command modules.
 * **/model-id:** - Applicable to all platforms. Only applies to some command modules.
 * **/dataset-id:** - Applicable to all platforms. Only applies to some command modules.
 * **/url:** - Applicable to `mlflow` platform only. Only applies to some command modules.
-* **/source-dir:** - Applicable to `azureml` and `sagemaker` platforms only. Only applies to one command module.
+* **/source-dir:** - Applicable to `azureml`, `sagemaker`, and `palantir` platforms only. Only applies to some command modules.
+* **/dataset-name:** - Applicable to `palantir` platform only. Only applies to upload-dataset command module.
 * **/notebook-name:** - Applicable to `sagemaker` platform only. Only applies to some command modules.
 * **/script:** - Applicable to `sagemaker` platform only. Only applies to one command module.
 
@@ -189,27 +191,71 @@ You can obtain all required information from this file, such as the client ID, c
 
 API key is alphanumeric and is provided as a GET variable name of `api_key=`.
 
+### Bearer Token
+
+#### Palantir AIP
+
+For Palantir AIP authentication, you need a Bearer token and tenant URL. The App RID is **optional** - if not provided, MLOKit will automatically discover datasets using the Spaces API. Within the `/credential:` argument, provide these values separated by `;`.
+
+**With App RID (targeted discovery):**
+`/credential:eyJwbG50ciI6...;tenant.palantirfoundry.com;ri.compass.main.folder.abc123`
+
+**Without App RID (automatic Spaces API discovery):**
+`/credential:eyJwbG50ciI6...;tenant.palantirfoundry.com`
+
+You can obtain these values from:
+
+* **Token**: From your Palantir AIP authentication session or API tokens
+* **Tenant**: Your Palantir Foundry tenant URL (without https://)
+* **App RID** *(Optional)*: The Resource Identifier of the App/folder containing your datasets. If not provided, MLOKit will automatically discover datasets across all accessible spaces and projects using the Spaces API.
+
 ### Access Key and Secret Access Key
 
 ####  SageMaker
 
 This only applies to SageMaker. Within the `/credential:` argument provide your `ACCESS_KEY` and `SECRET_ACCESS_KEY` separate by a `;`. For example `/credential:ABC123;AAAFDSKAFLKASDFJSAF`.
 
+## Palantir Dataset Discovery Methods
+
+MLOKit supports two discovery methods for Palantir AIP datasets:
+
+### Targeted Discovery (App RID)
+
+When you provide an App RID in your credentials (`token;tenant;apprid`), MLOKit will:
+
+* Explore datasets within the specified App folder
+* Recursively search subfolders up to 3 levels deep
+* Filter out example content automatically
+* Provide faster, focused results
+
+### Automatic Discovery (Spaces API)
+
+When you omit the App RID (`token;tenant`), MLOKit will:
+
+* Query the Spaces API to discover all accessible spaces and projects
+* Recursively explore each space for datasets up to 4 levels deep
+* Automatically filter out example and demo content
+* Provide comprehensive tenant-wide dataset discovery
+* Remove duplicate datasets found across multiple spaces
+
+**Note:** The automatic discovery method may take longer but provides broader coverage when you don't have a specific App RID or want to discover all accessible datasets.
+
 ## Module Details Table
 
 The below table shows where each module is supported
 
-Module  | Azure ML (`azureml`) | BigML (`bigml`) | Vertex AI (`vertexai`) | MLFlow (`mlflow`) | Sagemaker (`sagemaker`)
-:---: |:---: | :---: | :---:  | :---:  | :---:
-`check` | X | X | X | X | X
-`list-projects` | X | X | X | | 
-`list-models` | X | X | X | X | X
-`list-datasets` | X | X | X | | 
-`download-model` | X | X | X | X | X
-`download-dataset` | X | X | X | | 
-`poison-model` | X |  |  | | X
-`list-notebooks` |  |  |  | | X
-`add-notebook-trigger` |  |  |  | | X
+Module  | Azure ML (`azureml`) | BigML (`bigml`) | Vertex AI (`vertexai`) | MLFlow (`mlflow`) | Sagemaker (`sagemaker`) | Palantir (`palantir`)
+:---: |:---: | :---: | :---:  | :---:  | :---: | :---:
+`check` | X | X | X | X | X | X
+`list-projects` | X | X | X | | | 
+`list-models` | X | X | X | X | X | 
+`list-datasets` | X | X | X | | | X
+`download-model` | X | X | X | X | X | 
+`download-dataset` | X | X | X | | | X
+`upload-dataset` | | | | | | X
+`poison-model` | X |  |  | | X | 
+`list-notebooks` |  |  |  | | X | 
+`add-notebook-trigger` |  |  |  | | X | 
 
 
 ## Examples
@@ -245,6 +291,14 @@ For the `mlflow` platform, you will also have to provide a URL in the `/url:` co
 ##### SageMaker
 
 `MLOKit.exe check /platform:sagemaker /credential:access_key;secret_key /region:[REGION_NAME]`
+
+##### Palantir
+
+**With App RID (targeted discovery):**
+`MLOKit.exe check /platform:palantir /credential:token;tenant;apprid`
+
+**Without App RID (automatic Spaces API discovery):**
+`MLOKit.exe check /platform:palantir /credential:token;tenant`
 
 ##### Example Output
 
@@ -414,6 +468,14 @@ For the `vertexai` platform, you will also have to provide a project in the `/pr
 
 `MLOKit.exe list-datasets /platform:vertexai /credential:ya29.. /project:[PROJECT_NAME]`
 
+##### Palantir
+
+**With App RID (targeted discovery):**
+`MLOKit.exe list-datasets /platform:palantir /credential:token;tenant;apprid`
+
+**Without App RID (automatic Spaces API discovery):**
+`MLOKit.exe list-datasets /platform:palantir /credential:token;tenant`
+
 ##### Example Output
 
 ```
@@ -544,6 +606,16 @@ For the `vertexai` platform, you will also have to provide a project name in the
 
 `MLOKit.exe download-dataset /platform:vertexai /credential:ya29.. /project:[PROJECT_NAME] /dataset-id:[DATASET_ID]`
 
+##### Palantir
+
+For the `palantir` platform, you will need to provide a dataset RID in the `/dataset-id:` command argument.
+
+**With App RID (targeted discovery):**
+`MLOKit.exe download-dataset /platform:palantir /credential:token;tenant;apprid /dataset-id:[DATASET_RID]`
+
+**Without App RID (automatic Spaces API discovery):**
+`MLOKit.exe download-dataset /platform:palantir /credential:token;tenant /dataset-id:[DATASET_RID]`
+
 ##### Example Output
 
 ```
@@ -568,6 +640,59 @@ Timestamp:      4/7/2024 2:19:23 PM
 
 
 [+] SUCCESS: Dataset written to: C:\Temp\MLOKit-nKBqOWLO
+
+```
+
+### Upload Dataset
+
+#### Use Case
+
+> *Upload a training dataset to the Palantir platform*
+
+#### Syntax
+
+Supply the `upload-dataset` module, along with the MLOps platform in the `/platform:` command argument. Additionally, provide a credential in the `/credential:` command argument, a dataset name in the `/dataset-name:` command argument, and the local file path in the `/source-dir:` command argument. The dataset file will be uploaded to your Palantir tenant.
+
+##### Palantir
+
+For the `palantir` platform, you will need to provide a dataset name in the `/dataset-name:` command argument and the path to your local dataset file in the `/source-dir:` command argument.
+
+**With App RID (targeted upload):**
+`MLOKit.exe upload-dataset /platform:palantir /credential:token;tenant;apprid /dataset-name:[DATASET_NAME] /source-dir:[LOCAL_FILE_PATH]`
+
+**Without App RID (upload to default location):**
+`MLOKit.exe upload-dataset /platform:palantir /credential:token;tenant /dataset-name:[DATASET_NAME] /source-dir:[LOCAL_FILE_PATH]`
+
+##### Example Output
+
+```
+C:\>MLOKit.exe upload-dataset /platform:palantir /credential:token;tenant /dataset-name:customer-data /source-dir:C:\data\customers.csv
+
+==================================================
+Module:         upload-dataset
+Platform:       palantir
+Timestamp:      8/11/2025 2:30:15 PM
+==================================================
+
+
+[*] INFO: Performing upload-dataset module for palantir
+
+
+[*] INFO: Checking credentials provided
+
+[+] SUCCESS: Credentials provided are VALID.
+
+
+[*] INFO: Uploading dataset file: C:\data\customers.csv
+
+
+[*] INFO: Creating dataset with name: customer-data
+
+
+[+] SUCCESS: Dataset uploaded successfully with RID: ri.compass.main.dataset.abc123def456
+
+
+[*] INFO: Dataset available at: https://tenant.palantirfoundry.com/workspace/dataset/ri.compass.main.dataset.abc123def456
 
 ```
 
