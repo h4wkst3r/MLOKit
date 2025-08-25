@@ -27,6 +27,7 @@ MLOps Attack Toolkit - MLOKit is a toolkit that can be used to attack MLOps plat
   - [List Datasets](#List-Datasets)
   - [Download Model](#download-model)
   - [Download Dataset](#download-dataset)
+  - [Upload Dataset](#upload-dataset)
   - [Poison Model](#poison-model)
   - [List Notebooks](#list-notebooks)
   - [Add Notebook Trigger](#add-notebook-trigger)
