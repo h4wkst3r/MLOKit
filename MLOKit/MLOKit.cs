@@ -24,7 +24,13 @@ namespace MLOKit
         private static string notebookName = "";
         private static string script = "";
         private static string datasetName = "";
-        private static List<string> approvedModules = new List<string> { "check", "list-projects", "list-models", "list-datasets", "download-model", "download-dataset", "upload-dataset", "poison-model", "list-notebooks", "add-notebook-trigger" };
+        private static string computeID = "";
+        private static string sshKey = "";
+        private static string trainingJobConfigFilePath = "";
+        private static string trainingJobName = "";
+        private static string searchString = "";
+        private static string environmentName = "";
+        private static List<string> approvedModules = new List<string> { "check", "list-projects", "list-models", "list-datasets", "download-model", "download-dataset", "upload-dataset", "poison-model", "list-notebooks", "add-notebook-trigger", "list-compute", "list-training-jobs", "add-ssh-key", "create-training-job", "get-training-job-vars", "search-training-job-logs", "list-environments", "get-environment-config", "exec-notebook-code" };
 
 
         static async Task Main(string[] args)
@@ -176,6 +182,54 @@ namespace MLOKit
 
                 }
 
+                // compute id
+                if (argDict.ContainsKey("compute-id"))
+                {
+
+                    computeID = argDict["compute-id"];
+
+                }
+
+                // SSH key
+                if (argDict.ContainsKey("ssh-key"))
+                {
+
+                    sshKey = argDict["ssh-key"];
+
+                }
+
+                // training job config
+                if (argDict.ContainsKey("training-job-config"))
+                {
+
+                    trainingJobConfigFilePath = argDict["training-job-config"];
+
+                }
+
+                // training job name
+                if (argDict.ContainsKey("job-name"))
+                {
+
+                    trainingJobName = argDict["job-name"];
+
+                }
+
+                // search string
+                if (argDict.ContainsKey("search"))
+                {
+
+                    searchString = argDict["search"];
+
+                }
+
+                // environment name
+                if (argDict.ContainsKey("environment-name"))
+                {
+
+                    environmentName = argDict["environment-name"];
+
+                }
+
 
                 // determine if invalid module was given
                 if (!approvedModules.Contains(module))
@@ -213,6 +267,36 @@ namespace MLOKit
                             break;
                         case "download-dataset":
                             await Modules.AzureML.DownloadDataset.execute(credential, platform, subscriptionID, region, resourceGroup, workspace, datasetID);
+                            break;
+                        case "list-compute":
+                            await Modules.AzureML.ListCompute.execute(credential, platform, subscriptionID, region, resourceGroup, workspace);
+                            break;
+                        case "list-training-jobs":
+                            await Modules.AzureML.ListTrainingJobs.execute(credential, platform, subscriptionID, region, resourceGroup, workspace, trainingJobName);
+                            break;
+                        case "add-ssh-key":
+                            await Modules.AzureML.AddSSHKey.execute(credential, platform, subscriptionID, region, resourceGroup, workspace, computeID, sshKey);
+                            break;
+                        case "create-training-job":
+                            await Modules.AzureML.CreateTrainingJob.execute(credential, platform, subscriptionID, region, resourceGroup, workspace, trainingJobConfigFilePath);
+                            break;
+                        case "get-training-job-vars":
+                            await Modules.AzureML.GetTrainingJobVariables.execute(credential, platform, subscriptionID, region, resourceGroup, workspace, trainingJobName);
+                            break;
+                        case "search-training-job-logs":
+                            await Modules.AzureML.SearchTrainingJobLogs.execute(credential, platform, subscriptionID, region, resourceGroup, workspace, trainingJobName, searchString);
+                            break;
+                        case "list-environments":
+                            await Modules.AzureML.ListEnvironments.execute(credential, platform, subscriptionID, region, resourceGroup, workspace);
+                            break;
+                        case "get-environment-config":
+                            await Modules.AzureML.GetEnvironmentConfig.execute(credential, platform, subscriptionID, region, resourceGroup, workspace, environmentName);
+                            break;
+                        case "exec-notebook-code":
+                            await Modules.AzureML.ExecNotebookCode.execute(credential, platform, subscriptionID, region, resourceGroup, workspace, computeID, script);
+                            break;
+                        case "list-notebooks":
+                            await Modules.AzureML.ListNotebooks.execute(credential, platform, subscriptionID, region, resourceGroup, workspace);
                             break;
                         default:
                             Console.WriteLine("");
@@ -331,6 +415,15 @@ namespace MLOKit
                             break;
                         case "add-notebook-trigger":
                             await Modules.SageMaker.AddNotebookTrigger.execute(credential, platform, notebookName,script, endpoint);
+                            break;
+                        case "list-training-jobs":
+                            await Modules.SageMaker.ListTrainingJobs.execute(credential, platform, endpoint, trainingJobName);
+                            break;
+                        case "get-training-job-vars":
+                            await Modules.SageMaker.GetTrainingJobVariables.execute(credential, platform, endpoint, trainingJobName);
+                            break;
+                        case "exec-notebook-code":
+                            await Modules.SageMaker.ExecNotebookCode.execute(credential, platform, notebookName, script, endpoint);
                             break;
                         default:
                             Console.WriteLine("");

